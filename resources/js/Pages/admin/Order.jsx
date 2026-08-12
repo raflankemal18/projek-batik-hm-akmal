@@ -34,13 +34,22 @@ export default function Order({ payments }) {
                         <h1 className="text-3xl font-serif font-bold text-gray-900">Pesanan Masuk</h1>
                         <p className="text-gray-500">Kelola transaksi dan status pembayaran pelanggan.</p>
                     </div>
-                    <a
-                        href="/admin/orders/export"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-batik-900 hover:bg-batik-800 text-white rounded-lg font-medium transition-colors shadow-sm"
-                    >
-                        <Download className="w-4 h-4" />
-                        Export CSV
-                    </a>
+                    <div className="flex gap-2">
+                        <a
+                            href="/admin/orders/export?format=csv"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-batik-900 hover:bg-batik-800 text-white rounded-lg font-medium transition-colors shadow-sm"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export CSV
+                        </a>
+                        <a
+                            href="/admin/orders/export?format=pdf"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+                        >
+                            <Download className="w-4 h-4" />
+                            Export PDF
+                        </a>
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-batik-100 overflow-hidden">
