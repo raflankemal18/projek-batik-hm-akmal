@@ -146,18 +146,18 @@ export default function Checkout({ orders }) {
                     {/* KOLOM KANAN: RINGKASAN ORDER (STICKY) */}
                     <div className="lg:col-span-5 relative">
                         <div className="bg-white p-6 md:p-8 rounded-xl border border-batik-100 shadow-lg sticky top-24 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
-                            <h3 className="text-lg font-bold text-batik-900 mb-6 font-serif flex justify-between items-center">
+                            <h3 className="font-serif font-bold text-gray-900 text-lg flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
                                 <span>Ringkasan Pesanan</span>
                                 <span className="text-xs font-sans font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                    {orders.reduce((acc, o) => acc + o.order_details.length, 0)} Item
+                                    {orders?.reduce((acc, o) => acc + (o.order_details?.length || 0), 0) || 0} Item
                                 </span>
                             </h3>
                             
                             {/* List Barang */}
                             <div className="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                                {orders.map((order) => (
+                                {orders?.map((order) => (
                                     <div key={order.id}>
-                                        {order.order_details.map((detail) => (
+                                        {order.order_details?.map((detail) => (
                                             <div key={detail.id} className="flex gap-4 mb-4 pb-4 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0 group">
                                                 <div className="w-16 h-20 bg-gray-100 rounded-md overflow-hidden shrink-0 border border-gray-200">
                                                     <FallbackImage 

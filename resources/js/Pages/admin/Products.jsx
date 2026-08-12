@@ -87,7 +87,8 @@ export default function AdminProduct({ products }) {
                 onSuccess: () => {
                     setSelectedIds([]);
                     toast.success("Produk terpilih berhasil dihapus");
-                }
+                },
+                onError: () => toast.error("Gagal menghapus produk")
             });
         }
     };

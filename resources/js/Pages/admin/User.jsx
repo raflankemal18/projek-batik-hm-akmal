@@ -9,6 +9,7 @@ import { Trash2, Mail, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 export default function User({ users }) {
+    const userList = users?.data || users || [];
     // State untuk mengontrol Modal Konfirmasi
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
@@ -57,7 +58,7 @@ export default function User({ users }) {
     // Fungsi: Select All (Hanya non-admin)
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            const ids = users.data.filter(u => u.role !== 'admin').map(u => u.id);
+            const ids = userList.filter(u => u.role !== 'admin').map(u => u.id);
             setSelectedIds(ids);
         } else {
             setSelectedIds([]);
@@ -131,8 +132,8 @@ export default function User({ users }) {
                                             type="checkbox" 
                                             className="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
                                             checked={
-                                                users.data.filter(u => u.role !== 'admin').length > 0 &&
-                                                selectedIds.length === users.data.filter(u => u.role !== 'admin').length
+                                                userList.filter(u => u.role !== 'admin').length > 0 &&
+                                                selectedIds.length === userList.filter(u => u.role !== 'admin').length
                                             }
                                             onChange={handleSelectAll}
                                         />
@@ -145,8 +146,8 @@ export default function User({ users }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {users.data.length > 0 ? (
-                                    users.data.map((user, index) => (
+                                {userList.length > 0 ? (
+                                    userList.map((user, index) => (
                                         <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 text-center">
                                                 {user.role !== 'admin' && (

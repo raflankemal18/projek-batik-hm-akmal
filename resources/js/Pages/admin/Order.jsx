@@ -53,7 +53,8 @@ export default function Order({ payments }) {
                 onSuccess: () => {
                     setSelectedIds([]);
                     toast.success("Pesanan terpilih berhasil dihapus");
-                }
+                },
+                onError: () => toast.error("Gagal menghapus pesanan")
             });
         }
     };
@@ -69,12 +70,15 @@ export default function Order({ payments }) {
             status: bulkStatus
         }, {
             onSuccess: () => {
-                setSelectedIds([]);
                 setBulkStatus("");
+                setSelectedIds([]);
                 toast.success("Status pengiriman massal diperbarui");
                 setIsBulkLoading(false);
             },
-            onError: () => setIsBulkLoading(false)
+            onError: () => {
+                toast.error("Gagal memperbarui status pengiriman massal");
+                setIsBulkLoading(false);
+            }
         });
     };
 
@@ -191,21 +195,21 @@ export default function Order({ payments }) {
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-2 font-bold text-gray-900">
                                                     <User className="w-3 h-3 text-batik-gold" /> 
-                                                    {payment.payment_details[0]?.name}
+                                                    {payment.payment_details?.[0]?.name}
                                                 </div>
                                                 <div className="flex items-center gap-2 text-xs">
                                                     <Phone className="w-3 h-3" /> 
-                                                    {payment.payment_details[0]?.phone}
+                                                    {payment.payment_details?.[0]?.phone}
                                                 </div>
                                                 <div className="flex items-start gap-2 text-xs italic text-gray-400 max-w-[200px]">
                                                     <MapPin className="w-3 h-3 shrink-0 mt-0.5" /> 
-                                                    {payment.payment_details[0]?.alamat}
+                                                    {payment.payment_details?.[0]?.alamat}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="space-y-2">
-                                                {payment.payment_details.map((detail, idx) => (
+                                                {payment.payment_details?.map((detail, idx) => (
                                                     <div key={idx} className="flex items-center gap-3 text-xs bg-gray-50 p-2 rounded border border-gray-100">
                                                         <div className="font-medium text-gray-900">{detail.product?.name}</div>
                                                         <div className="text-gray-500 border-l pl-2 ml-auto shrink-0">
@@ -294,7 +298,10 @@ function FulfillmentSelect({ order }) {
                 toast.success("Status pengiriman diperbarui");
                 setIsLoading(false);
             },
-            onError: () => setIsLoading(false)
+            onError: () => {
+                toast.error("Gagal memperbarui status pengiriman");
+                setIsLoading(false);
+            }
         });
     };
 

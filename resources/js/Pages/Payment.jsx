@@ -86,10 +86,10 @@ export default function Payment({ payments }) {
                                 <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-100">
                                     <p className="text-sm font-bold text-gray-700 mb-2">Item:</p>
                                     <ul className="space-y-1">
-                                        {pendingPayment.payment_details.map((item, idx) => (
+                                        {pendingPayment.payment_details?.map((item, idx) => (
                                             <li key={idx} className="text-sm text-gray-600 flex justify-between">
                                                 <span>{item.quantity}x {item.product?.name || "Produk Batik"} ({item.size})</span>
-                                                <span className="font-medium">{formatRupiah(item.harga * item.quantity)}</span>
+                                                <span className="font-medium text-gray-900">Rp {(item.price * item.quantity).toLocaleString('id-ID')}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -128,7 +128,7 @@ export default function Payment({ payments }) {
                                             <p className="text-xs text-gray-500 mb-1">{new Date(p.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <Package className="w-4 h-4" />
-                                                <span>{p.payment_details.length} Barang</span>
+                                                <span>{p.payment_details?.length || 0} Barang</span>
                                             </div>
                                         </div>
                                     </div>
