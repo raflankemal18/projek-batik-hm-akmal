@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
@@ -33,6 +34,7 @@ Route::middleware('auth', 'role:admin', 'throttle:30,1')->group(function () {
     Route::get('/admin/analytics', [AdminDashboardController::class, 'analytics'])->name('admin.analytics');
     Route::get('/admin/users', [AdminDashboardController::class, 'users'])->name('admin.users');
     Route::get('/admin/orders', [AdminDashboardController::class, 'orders'])->name('admin.orders');
+    Route::get('/admin/orders/export', [OrderController::class, 'export'])->name('admin.orders.export');
     Route::get('/admin/products', [ProductController::class, 'index'])->name('admin.products');
     Route::post('/admin/products', [ProductController::class, 'store'])->name('admin.products.store');
     Route::put('/admin/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');

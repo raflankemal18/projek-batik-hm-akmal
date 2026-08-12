@@ -6,7 +6,7 @@ import Pagination from "@/Components/Pagination";
 import useTableFilters from "@/hooks/useTableFilters";
 import { formatRupiah } from "@/lib/format";
 import { Badge } from "@/Components/ui/badge";
-import { Calendar, User, Phone, MapPin, Truck } from "lucide-react";
+import { Calendar, User, Phone, MapPin, Truck, Download } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Order({ payments }) {
@@ -29,9 +29,18 @@ export default function Order({ payments }) {
     return (
         <AdminLayout>
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-3xl font-serif font-bold text-gray-900">Pesanan Masuk</h1>
-                    <p className="text-gray-500">Kelola transaksi dan status pembayaran pelanggan.</p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-serif font-bold text-gray-900">Pesanan Masuk</h1>
+                        <p className="text-gray-500">Kelola transaksi dan status pembayaran pelanggan.</p>
+                    </div>
+                    <a
+                        href="/admin/orders/export"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-batik-900 hover:bg-batik-800 text-white rounded-lg font-medium transition-colors shadow-sm"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                    </a>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-batik-100 overflow-hidden">
