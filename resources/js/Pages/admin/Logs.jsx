@@ -51,9 +51,25 @@ export default function Logs({ logs, filters }) {
     return (
         <AdminLayout>
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-3xl font-serif font-bold text-gray-900">Log Aktivitas</h1>
-                    <p className="text-gray-500">Riwayat aktivitas user, admin, dan transaksi — append-only.</p>
+                <div className="flex justify-between items-start flex-col sm:flex-row gap-4">
+                    <div>
+                        <h1 className="text-3xl font-serif font-bold text-gray-900">Log Aktivitas</h1>
+                        <p className="text-gray-500">Riwayat aktivitas user, admin, dan transaksi — append-only.</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <a 
+                            href={`/admin/logs/export?format=csv&type=${type}&search=${search}&date_from=${dateFrom}&date_to=${dateTo}`}
+                            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
+                        >
+                            Export CSV
+                        </a>
+                        <a 
+                            href={`/admin/logs/export?format=pdf&type=${type}&search=${search}&date_from=${dateFrom}&date_to=${dateTo}`}
+                            className="px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 text-sm font-medium transition-colors"
+                        >
+                            Export PDF
+                        </a>
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-batik-100 overflow-hidden">
