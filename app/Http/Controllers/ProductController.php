@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Services\AuditLogService;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ProductController extends Controller
@@ -32,16 +33,23 @@ class ProductController extends Controller
     {
         $this->authorize('create', Product::class);
 
-        $product = $this->productService->create($request);
+        try {
+            DB::beginTransaction();
+            $product = $this->productService->create($request);
 
-        AuditLogService::recordAdmin('product.create', $product, 'Produk baru', [
-            'name' => $product->name,
-            'harga' => $product->harga,
-            'sizes' => $request->input('sizes'),
-            'image_count' => count($request->file('images') ?? []),
-        ]);
+            AuditLogService::recordAdmin('product.create', $product, 'Produk baru', [
+                'name' => $product->name,
+                'harga' => $product->harga,
+                'sizes' => $request->input('sizes'),
+                'image_count' => count($request->file('images') ?? []),
+            ]);
+            DB::commit();
 
-        return redirect()->route('admin.dashboard')->with('success', 'Product added successfully!');
+            return redirect()->route('admin.dashboard')->with('success', 'Product added successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['message' => 'Gagal menambahkan produk: ' . $e->getMessage()]);
+        }
     }
 
     public function update(UpdateProductRequest $request, Product $product)
@@ -50,37 +58,51 @@ class ProductController extends Controller
 
         $before = $product->only(['name', 'harga', 'description', 'category']);
 
-        $updated = $this->productService->update($product->id, $request);
+        try {
+            DB::beginTransaction();
+            $updated = $this->productService->update($product->id, $request);
 
-        AuditLogService::recordAdmin('product.update', $updated, 'Produk diubah', [
-            'before' => $before,
-            'after' => $updated->only(['name', 'harga', 'description', 'category']),
-            'images_added' => count($request->file('images') ?? []),
-        ]);
+            AuditLogService::recordAdmin('product.update', $updated, 'Produk diubah', [
+                'before' => $before,
+                'after' => $updated->only(['name', 'harga', 'description', 'category']),
+                'images_added' => count($request->file('images') ?? []),
+            ]);
+            DB::commit();
 
-        return redirect()->back()->with('success', 'Produk berhasil diperbarui');
+            return redirect()->back()->with('success', 'Produk berhasil diperbarui');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['message' => 'Gagal memperbarui produk: ' . $e->getMessage()]);
+        }
     }
 
     public function destroy(Product $product)
     {
         $this->authorize('delete', $product);
 
-        $name = $product->name;
-        $harga = $product->harga;
-        $imageCount = $product->images()->count();
+        try {
+            DB::beginTransaction();
+            $name = $product->name;
+            $harga = $product->harga;
+            $imageCount = $product->images()->count();
 
-        $this->productService->delete($product->id);
+            $this->productService->delete($product->id);
 
-        // $product is still a valid in-memory PHP object here (the DB row is
-        // gone, but the instance isn't) — pass it as subject so subject_id
-        // stays queryable even after the product itself no longer exists.
-        AuditLogService::recordAdmin('product.delete', $product, 'Produk dihapus', [
-            'name' => $name,
-            'harga' => $harga,
-            'image_count' => $imageCount,
-        ]);
+            // $product is still a valid in-memory PHP object here (the DB row is
+            // gone, but the instance isn't) — pass it as subject so subject_id
+            // stays queryable even after the product itself no longer exists.
+            AuditLogService::recordAdmin('product.delete', $product, 'Produk dihapus', [
+                'name' => $name,
+                'harga' => $harga,
+                'image_count' => $imageCount,
+            ]);
+            DB::commit();
 
-        return redirect()->back()->with('success', 'Produk berhasil dihapus');
+            return redirect()->back()->with('success', 'Produk berhasil dihapus');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['message' => 'Gagal menghapus produk: ' . $e->getMessage()]);
+        }
     }
 
     public function bulkDelete(Request $request)
@@ -94,23 +116,30 @@ class ProductController extends Controller
 
         $ids = $request->ids;
         
-        foreach ($ids as $id) {
-            $product = Product::find($id);
-            if ($product) {
-                $name = $product->name;
-                $harga = $product->harga;
-                $imageCount = $product->images()->count();
+        try {
+            DB::beginTransaction();
+            foreach ($ids as $id) {
+                $product = Product::find($id);
+                if ($product) {
+                    $name = $product->name;
+                    $harga = $product->harga;
+                    $imageCount = $product->images()->count();
 
-                $this->productService->delete($product->id);
+                    $this->productService->delete($product->id);
 
-                AuditLogService::recordAdmin('product.delete', $product, 'Produk dihapus via bulk action', [
-                    'name' => $name,
-                    'harga' => $harga,
-                    'image_count' => $imageCount,
-                ]);
+                    AuditLogService::recordAdmin('product.delete', $product, 'Produk dihapus via bulk action', [
+                        'name' => $name,
+                        'harga' => $harga,
+                        'image_count' => $imageCount,
+                    ]);
+                }
             }
-        }
+            DB::commit();
 
-        return redirect()->back()->with('success', count($ids) . ' produk berhasil dihapus');
+            return redirect()->back()->with('success', count($ids) . ' produk berhasil dihapus');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['message' => 'Gagal menghapus produk: ' . $e->getMessage()]);
+        }
     }
 }

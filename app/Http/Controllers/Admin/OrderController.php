@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrderController extends Controller
@@ -54,9 +55,16 @@ class OrderController extends Controller
             'ids.*' => 'exists:payments,id'
         ]);
 
-        Payment::whereIn('id', $request->ids)->delete();
+        try {
+            DB::beginTransaction();
+            Payment::whereIn('id', $request->ids)->delete();
+            DB::commit();
 
-        return redirect()->back()->with('success', 'Pesanan terpilih berhasil dihapus.');
+            return redirect()->back()->with('success', 'Pesanan terpilih berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['message' => 'Gagal menghapus pesanan: ' . $e->getMessage()]);
+        }
     }
 
     public function bulkUpdateFulfillment(Request $request)
@@ -67,22 +75,29 @@ class OrderController extends Controller
             'status' => 'required|in:processing,shipped,delivered'
         ]);
 
-        $orders = \App\Models\Order::whereIn('payment_id', $request->ids)->with('payment.user')->get();
-        foreach ($orders as $order) {
-            $order->update(['fulfillment_status' => $request->status]);
+        try {
+            DB::beginTransaction();
+            $orders = \App\Models\Order::whereIn('payment_id', $request->ids)->with('payment.user')->get();
+            foreach ($orders as $order) {
+                $order->update(['fulfillment_status' => $request->status]);
 
-            if ($order->payment && $order->payment->user) {
-                $statusLabel = [
-                    'processing' => 'Diproses',
-                    'shipped' => 'Dikirim',
-                    'delivered' => 'Diterima'
-                ][$request->status] ?? $request->status;
+                if ($order->payment && $order->payment->user) {
+                    $statusLabel = [
+                        'processing' => 'Diproses',
+                        'shipped' => 'Dikirim',
+                        'delivered' => 'Diterima'
+                    ][$request->status] ?? $request->status;
 
-                $msg = "Pesanan #{$order->payment->id} telah diupdate menjadi: {$statusLabel}.";
-                $order->payment->user->notify(new \App\Notifications\OrderStatusUpdated($order, $msg));
+                    $msg = "Pesanan #{$order->payment->id} telah diupdate menjadi: {$statusLabel}.";
+                    $order->payment->user->notify(new \App\Notifications\OrderStatusUpdated($order, $msg));
+                }
             }
-        }
+            DB::commit();
 
-        return redirect()->back()->with('success', 'Status pengiriman terpilih berhasil diperbarui.');
+            return redirect()->back()->with('success', 'Status pengiriman terpilih berhasil diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['message' => 'Gagal memperbarui status pengiriman: ' . $e->getMessage()]);
+        }
     }
 }
