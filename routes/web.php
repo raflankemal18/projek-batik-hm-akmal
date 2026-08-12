@@ -41,6 +41,7 @@ Route::middleware('auth', 'role:admin')->group(function () {
     Route::get('/admin/products', [ProductController::class, 'index'])->name('admin.products');
     Route::post('/admin/products', [ProductController::class, 'store'])->name('admin.products.store');
     Route::put('/admin/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
+    Route::delete('/admin/products/bulk', [ProductController::class, 'bulkDelete'])->name('admin.products.bulk_destroy');
     Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
     Route::delete('/admin/users/bulk', [UserController::class, 'bulkDelete'])->name('admin.users.bulk_destroy');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');

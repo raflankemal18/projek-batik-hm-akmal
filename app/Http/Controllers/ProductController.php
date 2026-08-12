@@ -82,4 +82,35 @@ class ProductController extends Controller
 
         return redirect()->back()->with('success', 'Produk berhasil dihapus');
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $this->authorize('delete', Product::class);
+
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:products,id'
+        ]);
+
+        $ids = $request->ids;
+        
+        foreach ($ids as $id) {
+            $product = Product::find($id);
+            if ($product) {
+                $name = $product->name;
+                $harga = $product->harga;
+                $imageCount = $product->images()->count();
+
+                $this->productService->delete($product->id);
+
+                AuditLogService::recordAdmin('product.delete', $product, 'Produk dihapus via bulk action', [
+                    'name' => $name,
+                    'harga' => $harga,
+                    'image_count' => $imageCount,
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', count($ids) . ' produk berhasil dihapus');
+    }
 }

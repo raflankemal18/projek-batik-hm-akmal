@@ -16,9 +16,10 @@ export default function AdminProduct({ products }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     
-    // State untuk Konfirmasi Hapus
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState(null);
+
+    const [selectedIds, setSelectedIds] = useState([]);
 
     const list = products?.data || products || [];
     const {
@@ -63,6 +64,34 @@ export default function AdminProduct({ products }) {
         }
     };
 
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(list.map(p => p.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (e, id) => {
+        if (e.target.checked) {
+            setSelectedIds([...selectedIds, id]);
+        } else {
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        }
+    };
+
+    const handleBulkDelete = () => {
+        if (confirm("Apakah Anda yakin ingin menghapus produk terpilih?")) {
+            router.delete('/admin/products/bulk', {
+                data: { ids: selectedIds },
+                onSuccess: () => {
+                    setSelectedIds([]);
+                    toast.success("Produk terpilih berhasil dihapus");
+                }
+            });
+        }
+    };
+
     return (
         <AdminLayout>
             <div className="space-y-6">
@@ -88,10 +117,33 @@ export default function AdminProduct({ products }) {
                         sortOptions={sortOptions}
                         searchPlaceholder="Cari produk..."
                     />
+                    {selectedIds.length > 0 && (
+                        <div className="flex items-center gap-4 p-4 border-b border-gray-100 bg-gray-50/50">
+                            <span className="text-sm font-medium text-gray-700">
+                                {selectedIds.length} produk terpilih
+                            </span>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <button 
+                                    onClick={handleBulkDelete}
+                                    className="px-4 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-md text-sm font-medium transition-colors border border-red-200"
+                                >
+                                    Hapus Terpilih
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
                                 <tr>
+                                    <th className="px-6 py-4 w-4">
+                                        <input 
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-batik-600 shadow-sm focus:border-batik-300 focus:ring focus:ring-batik-200 focus:ring-opacity-50"
+                                            checked={list.length > 0 && selectedIds.length === list.length}
+                                            onChange={handleSelectAll}
+                                        />
+                                    </th>
                                     <th className="px-6 py-4">Produk</th>
                                     <th className="px-6 py-4">Harga</th>
                                     <th className="px-6 py-4">Varian & Stok</th>
@@ -101,12 +153,20 @@ export default function AdminProduct({ products }) {
                             <tbody className="divide-y divide-gray-100">
                                 {list.length === 0 ? (
                                     <tr>
-                                        <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                                             Tidak ada produk ditemukan.
                                         </td>
                                     </tr>
                                 ) : list.map((product) => (
                                     <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <input 
+                                                type="checkbox"
+                                                className="rounded border-gray-300 text-batik-600 shadow-sm focus:border-batik-300 focus:ring focus:ring-batik-200 focus:ring-opacity-50"
+                                                checked={selectedIds.includes(product.id)}
+                                                onChange={(e) => handleSelectOne(e, product.id)}
+                                            />
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
