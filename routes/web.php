@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Auth + admin
-Route::middleware('auth', 'role:admin', 'throttle:120,1')->group(function () {
+Route::middleware('auth', 'role:admin')->group(function () {
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/analytics', [AdminDashboardController::class, 'analytics'])->name('admin.analytics');
     Route::get('/admin/users', [AdminDashboardController::class, 'users'])->name('admin.users');
@@ -55,7 +55,7 @@ Route::middleware('auth', 'role:admin', 'throttle:120,1')->group(function () {
 });
 
 // Auth + user
-Route::middleware('auth', 'role:user', 'throttle:120,1')->group(function () {
+Route::middleware('auth', 'role:user')->group(function () {
     Route::post('/cart/add', [CartController::class, 'add']);
     Route::post('/cart/update', [CartController::class, 'updateQuantity']);
     Route::post('/cart/remove', [CartController::class, 'remove']);
