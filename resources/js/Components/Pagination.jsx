@@ -1,8 +1,6 @@
 import React from "react";
 
 export default function Pagination({ links }) {
-    console.log(links);
-
     if (!links) {
         return <div>Loading...</div>;
     }

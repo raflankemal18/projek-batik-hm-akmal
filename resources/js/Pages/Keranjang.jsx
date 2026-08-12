@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
+import { flattenCartItems } from "@/lib/cart";
+import FallbackImage from "@/Components/ui/FallbackImage";
 import { router, Link, Head } from "@inertiajs/react";
 import WelcomeLayout from "@/Layouts/WelcomeLayout";
 import { Button } from "@/Components/ui/button";
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
-import ConfirmDialog from "@/Components/ConfirmDialog"; // Import Modal Custom
+import ConfirmDialog from "@/Components/ConfirmDialog";
 
 export default function Keranjang({ keranjangs }) {
     const [items, setItems] = useState([]);
@@ -19,20 +21,7 @@ export default function Keranjang({ keranjangs }) {
     });
 
     useEffect(() => {
-        const flattenedItems = keranjangs
-            .map((keranjang) =>
-                keranjang.details.map((detail) => ({
-                    id: detail.id,
-                    product_id: detail.product.id,
-                    name: detail.product.name,
-                    harga: detail.product.harga,
-                    image_url: detail.product.images,
-                    size: detail.size,
-                    quantity: detail.quantity,
-                }))
-            )
-            .flat();
-        setItems(flattenedItems);
+        setItems(flattenCartItems(keranjangs));
     }, [keranjangs]);
 
     // --- UPDATE QUANTITY ---
@@ -81,26 +70,9 @@ export default function Keranjang({ keranjangs }) {
         }
     };
 
-    // --- CHECKOUT ---
+    // --- CHECKOUT (LANJUT KE HALAMAN ALAMAT/PENGIRIMAN) ---
     const handleCheckout = () => {
-        const orderData = {
-            items: items.map((item) => ({
-                product_id: item.product_id,
-                size: item.size,
-                quantity: item.quantity,
-                harga: item.harga,
-            })),
-            totalHarga: calculateTotal(),
-        };
-
-        router.post("/checkout", orderData, {
-            onStart: () => setLoading(true),
-            onFinish: () => setLoading(false),
-            onError: (error) => {
-                console.error("Checkout failed:", error);
-                toast.error("Gagal memproses checkout.");
-            },
-        });
+        router.visit('/co');
     };
 
     const calculateTotal = () => items.reduce((sum, item) => sum + item.harga * item.quantity, 0);
@@ -153,8 +125,8 @@ export default function Keranjang({ keranjangs }) {
                         {items.map((item) => (
                             <div key={item.id} className="flex gap-4 sm:gap-6 p-4 bg-white rounded-xl shadow-sm border border-batik-100 hover:border-batik-300 transition-colors">
                                 <div className="w-24 h-32 sm:w-32 sm:h-40 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-100">
-                                    <img 
-                                        src={item.image_url && item.image_url.length > 0 ? `/storage/${item.image_url[0].image_path.replace("public/", "")}` : "https://placehold.co/400?text=No+Image"} 
+                                    <FallbackImage 
+                                        src={item.image_url?.[0]?.image_path} 
                                         alt={item.name} 
                                         className="w-full h-full object-cover"
                                     />

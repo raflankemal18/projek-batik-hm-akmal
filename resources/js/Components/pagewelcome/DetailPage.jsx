@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
+import FallbackImage from "@/Components/ui/FallbackImage";
 import { router } from "@inertiajs/react"; // Ganti import
 
 const DetailPage = ({ products }) => {
@@ -48,9 +49,9 @@ const DetailPage = ({ products }) => {
                     {products.images.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
                             {products.images.map((image, index) => (
-                                <img
+                                <FallbackImage
                                     key={index}
-                                    src={`/storage/${image.image_path.slice(7)}`}
+                                    src={image.image_path}
                                     alt={`Image ${index + 1} of ${products.name}`}
                                     className="w-full h-48 object-center rounded-lg"
                                 />

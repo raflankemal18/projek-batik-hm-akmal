@@ -12,15 +12,12 @@ const isUser = auth.user?.role === 'user';
     const [isClick, setisClick] = useState(false);
     const toggleNavbar = () => setisClick(!isClick);
 
-    // --- LOGIKA LOGOUT DENGAN HAPUS TOKEN JWT ---
+    // --- LOGOUT MELALUI SESSION (COOKIE) ---
     const handleLogout = (e) => {
         e.preventDefault();
         
         router.post(route("logout"), {}, {
             onFinish: () => {
-                // 1. Hapus Token dari Penyimpanan Browser
-                localStorage.removeItem("auth_token");
-                console.log("🔒 Logout: JWT Token dihapus.");                
                 window.location.reload(); 
             }
         });

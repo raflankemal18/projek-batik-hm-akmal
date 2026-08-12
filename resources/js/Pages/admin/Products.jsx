@@ -2,7 +2,11 @@ import React, { useState } from "react";
 import AdminLayout from "@/Components/component/admin-page-layout";
 import ProductModal from "./form/modal/Modal"; 
 import ConfirmDialog from "@/Components/ConfirmDialog"; // Import Modal Baru
-import { formatRupiah } from "@/helper/formatRupiah";
+import TableToolbar from "@/Components/ui/TableToolbar";
+import Pagination from "@/Components/Pagination";
+import useTableFilters from "@/hooks/useTableFilters";
+import { formatRupiah } from "@/lib/format";
+import FallbackImage from "@/Components/ui/FallbackImage";
 import { Package, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { router } from "@inertiajs/react";
@@ -15,6 +19,21 @@ export default function AdminProduct({ products }) {
     // State untuk Konfirmasi Hapus
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState(null);
+
+    const list = products?.data || products || [];
+    const {
+        search, setSearch,
+        sort, setSort, direction, setDirection,
+    } = useTableFilters("created_at", "desc");
+
+    const sortOptions = [
+        { label: "Terbaru", sort: "created_at", direction: "desc" },
+        { label: "Terlama", sort: "created_at", direction: "asc" },
+        { label: "Nama A-Z", sort: "name", direction: "asc" },
+        { label: "Nama Z-A", sort: "name", direction: "desc" },
+        { label: "Harga Terendah", sort: "harga", direction: "asc" },
+        { label: "Harga Tertinggi", sort: "harga", direction: "desc" },
+    ];
 
     // Buka Modal Tambah
     const handleCreate = () => {
@@ -37,7 +56,7 @@ export default function AdminProduct({ products }) {
     // Eksekusi Hapus (Dipanggil jika user klik "Ya, Hapus" di modal)
     const executeDelete = () => {
         if (productToDelete) {
-            router.delete(route('admin.product.delete', productToDelete.id), {
+            router.delete(route('admin.products.destroy', productToDelete.id), {
                 onSuccess: () => toast.success("Produk berhasil dihapus"),
                 onError: () => toast.error("Gagal menghapus produk")
             });
@@ -60,6 +79,15 @@ export default function AdminProduct({ products }) {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-batik-100 overflow-hidden">
+                    <TableToolbar
+                        search={search}
+                        onSearchChange={setSearch}
+                        sort={sort}
+                        direction={direction}
+                        onSortChange={(s, d) => { setSort(s); setDirection(d); }}
+                        sortOptions={sortOptions}
+                        searchPlaceholder="Cari produk..."
+                    />
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
@@ -71,13 +99,19 @@ export default function AdminProduct({ products }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {products.map((product) => (
+                                {list.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                            Tidak ada produk ditemukan.
+                                        </td>
+                                    </tr>
+                                ) : list.map((product) => (
                                     <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
-                                                    <img
-                                                        src={product.images?.[0] ? `/storage/${product.images[0].image_path.replace("public/", "")}` : "https://placehold.co/100"}
+                                                    <FallbackImage
+                                                        src={product.images?.[0]?.image_path}
                                                         alt={product.name}
                                                         className="h-full w-full object-cover object-center"
                                                     />
@@ -130,6 +164,12 @@ export default function AdminProduct({ products }) {
                             </tbody>
                         </table>
                     </div>
+
+                    {products.links && (
+                        <div className="flex justify-end pt-4 pb-2 px-6 border-t border-gray-100">
+                            <Pagination links={products.links} />
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,4 +1,4 @@
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
 import React from "react";
 
 export default function Invoice({ payment, status }) {

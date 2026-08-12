@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import ProductCards from "@/Components/ProductCards";
+import { router } from "@inertiajs/react";
 import { Search, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 
-export default function ProductCollection({ products }) {
+export default function ProductCollection({ products, activeCategory = "all" }) {
     const [filteredProducts, setFilteredProducts] = useState(products);
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState("newest");
-    const [selectedCategory, setSelectedCategory] = useState("all");
+    const [selectedCategory, setSelectedCategory] = useState(activeCategory);
 
     // Dummy Categories (Bisa disesuaikan dengan data real nanti)
     const categories = [
@@ -16,7 +17,7 @@ export default function ProductCollection({ products }) {
         { id: "sarimbit", name: "Sarimbit (Couple)" },
     ];
 
-    // Logic Filtering & Sorting
+    // Logic Filtering & Sorting (search & sort client-side; kategori dari server)
     useEffect(() => {
         let result = [...products];
 
@@ -27,13 +28,7 @@ export default function ProductCollection({ products }) {
             );
         }
 
-        // 2. Filter by Category (Dummy logic: karena di DB belum ada kolom kategori, 
-        // kita anggap semua 'all' dulu. Nanti tinggal sesuaikan field-nya)
-        if (selectedCategory !== "all") {
-            // result = result.filter(p => p.category === selectedCategory);
-        }
-
-        // 3. Sorting
+        // 2. Sorting
         switch (sortBy) {
             case "price_low":
                 result.sort((a, b) => parseFloat(a.harga) - parseFloat(b.harga));
@@ -49,7 +44,22 @@ export default function ProductCollection({ products }) {
         }
 
         setFilteredProducts(result);
-    }, [products, searchQuery, sortBy, selectedCategory]);
+    }, [products, searchQuery, sortBy]);
+
+    // Ganti kategori -> request ulang ke server (langsung memfilter produk)
+    const handleCategoryChange = (id) => {
+        setSelectedCategory(id);
+        router.get("/products", { category: id }, {
+            preserveState: true,
+            preserveScroll: true,
+            only: ["products", "activeCategory"],
+        });
+    };
+
+    // Sinkronkan tab aktif jika navigasi datang dari luar (mis. link /products)
+    useEffect(() => {
+        setSelectedCategory(activeCategory);
+    }, [activeCategory]);
 
     return (
         <section className="min-h-screen bg-[#faf9f6]">
@@ -78,7 +88,7 @@ export default function ProductCollection({ products }) {
                             {categories.map((cat) => (
                                 <button
                                     key={cat.id}
-                                    onClick={() => setSelectedCategory(cat.id)}
+                                    onClick={() => handleCategoryChange(cat.id)}
                                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                                         selectedCategory === cat.id
                                             ? "bg-batik-900 text-white border border-batik-900"

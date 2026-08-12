@@ -80,7 +80,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
             // --- LOGIKA UPDATE ---
             // Kita pakai post dengan _method: PUT untuk mengakali limitasi FormData file upload
             // atau langsung post ke route update khusus
-            router.post(route('admin.product.update', product.id), formData, {
+            router.post(route('admin.products.update', product.id), formData, {
                 onSuccess: () => {
                     onClose();
                     toast.success("Produk berhasil diperbarui!");
@@ -90,7 +90,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
             });
         } else {
             // --- LOGIKA CREATE ---
-            router.post("/add-product", formData, {
+            router.post(route('admin.products.store'), formData, {
                 onSuccess: () => {
                     onClose();
                     toast.success("Produk berhasil ditambahkan!");

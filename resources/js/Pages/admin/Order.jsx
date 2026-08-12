@@ -1,10 +1,29 @@
 import React from "react";
 import AdminLayout from "@/Components/component/admin-page-layout";
-import { formatRupiah } from "@/helper/formatRupiah";
+import TableToolbar from "@/Components/ui/TableToolbar";
+import Pagination from "@/Components/Pagination";
+import useTableFilters from "@/hooks/useTableFilters";
+import { formatRupiah } from "@/lib/format";
 import { Badge } from "@/Components/ui/badge";
 import { Calendar, User, Phone, MapPin } from "lucide-react";
 
 export default function Order({ payments }) {
+    const list = payments?.data || payments || [];
+
+    const {
+        search, setSearch,
+        sort, setSort, direction, setDirection,
+    } = useTableFilters("created_at", "desc");
+
+    const sortOptions = [
+        { label: "Terbaru", sort: "created_at", direction: "desc" },
+        { label: "Terlama", sort: "created_at", direction: "asc" },
+        { label: "Total Tertinggi", sort: "total_harga", direction: "desc" },
+        { label: "Total Terendah", sort: "total_harga", direction: "asc" },
+        { label: "Status A-Z", sort: "status", direction: "asc" },
+        { label: "Status Z-A", sort: "status", direction: "desc" },
+    ];
+
     return (
         <AdminLayout>
             <div className="space-y-6">
@@ -14,6 +33,15 @@ export default function Order({ payments }) {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-batik-100 overflow-hidden">
+                    <TableToolbar
+                        search={search}
+                        onSearchChange={setSearch}
+                        sort={sort}
+                        direction={direction}
+                        onSortChange={(s, d) => { setSort(s); setDirection(d); }}
+                        sortOptions={sortOptions}
+                        searchPlaceholder="Cari ID / nama / phone / alamat..."
+                    />
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
@@ -26,7 +54,13 @@ export default function Order({ payments }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {payments.map((payment) => (
+                                {list.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                            Belum ada pesanan masuk.
+                                        </td>
+                                    </tr>
+                                ) : list.map((payment) => (
                                     <tr key={payment.id} className="hover:bg-gray-50 transition-colors align-top">
                                         <td className="px-6 py-4 font-mono text-xs font-bold text-batik-900">
                                             #{payment.id}
@@ -81,6 +115,12 @@ export default function Order({ payments }) {
                             </tbody>
                         </table>
                     </div>
+
+                    {payments.links && (
+                        <div className="flex justify-end pt-4 pb-2 px-6 border-t border-gray-100">
+                            <Pagination links={payments.links} />
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>

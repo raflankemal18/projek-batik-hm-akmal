@@ -3,10 +3,10 @@ import { router } from "@inertiajs/react"; // Ganti import
 import { Label } from "@/Components/ui/label";
 import { RadioGroupItem, RadioGroup } from "@/Components/ui/radio-group";
 import { Button } from "@/Components/ui/button";
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
+import FallbackImage from "@/Components/ui/FallbackImage";
 
 export function DetailPage({ products }) {
-    console.log(products);
     const [selectedSize, setSelectedSize] = useState(null);
     const [quantity, setQuantity] = useState(1);
 
@@ -45,19 +45,12 @@ export function DetailPage({ products }) {
                                     key={index}
                                     className="border hover:border-gray-900 rounded-lg overflow-hidden transition-colors dark:hover:border-gray-50"
                                 >
-                                    <img
+                                    <FallbackImage
                                         alt={`Preview thumbnail ${index + 1}`}
                                         className="aspect-[5/6] object-cover"
                                         height="120"
                                         width="100"
-                                        src={
-                                            image.url
-                                                ? image.url.replace(
-                                                      "public",
-                                                      "/storage"
-                                                  )
-                                                : "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaGooto1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=830&q=80"
-                                        }
+                                        src={image.image_path || image.url}
                                     />
                                     <span className="sr-only">{`View Image ${
                                         index + 1
@@ -71,14 +64,11 @@ export function DetailPage({ products }) {
                         )}
                     </div>
                     <div className="md:col-span-4">
-                        <img
+                        <FallbackImage
                             alt="Product Image"
                             className="aspect-[2/3] object-cover border border-slate-200 border-gray-200 w-full rounded-lg overflow-hidden dark:border-gray-800 dark:border-slate-800"
                             height="900"
-                            src={products.images[0].image_path.replace(
-                                "public",
-                                "/storage"
-                            )}
+                            src={products.images[0]?.image_path}
                             width="600"
                         />
                     </div>

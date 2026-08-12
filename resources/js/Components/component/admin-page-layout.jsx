@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, usePage } from "@inertiajs/react";
+import React, { useState } from "react";
+import { Link, usePage, router } from "@inertiajs/react";
 import { Button } from "@/Components/ui/button";
 import {
     DropdownMenu,
@@ -23,6 +23,14 @@ import {
 
 export default function AdminLayout({ children }) {
     const { auth } = usePage().props;
+    const [query, setQuery] = useState("");
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        const q = query.trim();
+        if (!q) return;
+        router.get(route('admin.search'), { q }, { preserveState: false });
+    };
 
     return (
         <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] bg-[#f8f9fa]">
@@ -44,13 +52,13 @@ export default function AdminLayout({ children }) {
                             <AdminNavLink href="/admin/dashboard" active={route().current('admin.dashboard')} icon={<LayoutDashboard />}>
                                 Dashboard Overview
                             </AdminNavLink>
-                            <AdminNavLink href="/admin/order" active={route().current('admin.order')} icon={<ShoppingBag />}>
+                            <AdminNavLink href="/admin/orders" active={route().current('admin.orders')} icon={<ShoppingBag />}>
                                 Pesanan Masuk
                             </AdminNavLink>
                             <AdminNavLink href="/admin/products" active={route().current('admin.products')} icon={<Package />}>
                                 Manajemen Produk
                             </AdminNavLink>
-                            <AdminNavLink href="/admin/user" active={route().current('admin.user')} icon={<Users />}>
+                            <AdminNavLink href="/admin/users" active={route().current('admin.users')} icon={<Users />}>
                                 Data Pelanggan
                             </AdminNavLink>
                         </nav>
@@ -92,24 +100,26 @@ export default function AdminLayout({ children }) {
                                 </Link>
                                 <nav className="grid gap-2 text-lg font-medium">
                                     <AdminNavLink href="/admin/dashboard" icon={<LayoutDashboard />}>Dashboard</AdminNavLink>
-                                    <AdminNavLink href="/admin/order" icon={<ShoppingBag />}>Pesanan</AdminNavLink>
+                                    <AdminNavLink href="/admin/orders" icon={<ShoppingBag />}>Pesanan</AdminNavLink>
                                     <AdminNavLink href="/admin/products" icon={<Package />}>Produk</AdminNavLink>
-                                    <AdminNavLink href="/admin/user" icon={<Users />}>Pelanggan</AdminNavLink>
+                                    <AdminNavLink href="/admin/users" icon={<Users />}>Pelanggan</AdminNavLink>
                                 </nav>
                             </div>
                         </SheetContent>
                     </Sheet>
 
-                    {/* Search Bar (Dummy) */}
+                    {/* Search Bar */}
                     <div className="w-full flex-1">
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                        <form onSubmit={handleSearch} className="relative w-full max-w-sm">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                                 type="search"
-                                placeholder="Cari data..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Cari produk, pelanggan, pesanan..."
                                 className="w-full bg-gray-50 pl-9 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-batik-gold"
                             />
-                        </div>
+                        </form>
                     </div>
 
                     {/* Profile Dropdown */}

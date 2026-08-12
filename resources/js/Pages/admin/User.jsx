@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import AdminLayout from "@/Components/component/admin-page-layout";
 import Pagination from "@/Components/Pagination";
 import ConfirmDialog from "@/Components/ConfirmDialog"; // Import komponen modal custom
+import TableToolbar from "@/Components/ui/TableToolbar";
+import useTableFilters from "@/hooks/useTableFilters";
 import { router } from "@inertiajs/react";
 import { Trash2, Mail, Shield } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +12,20 @@ export default function User({ users }) {
     // State untuk mengontrol Modal Konfirmasi
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
+
+    const {
+        search, setSearch,
+        sort, setSort, direction, setDirection,
+    } = useTableFilters("created_at", "desc");
+
+    const sortOptions = [
+        { label: "Terbaru", sort: "created_at", direction: "desc" },
+        { label: "Terlama", sort: "created_at", direction: "asc" },
+        { label: "Nama A-Z", sort: "name", direction: "asc" },
+        { label: "Nama Z-A", sort: "name", direction: "desc" },
+        { label: "Email A-Z", sort: "email", direction: "asc" },
+        { label: "Email Z-A", sort: "email", direction: "desc" },
+    ];
 
     // Fungsi: Buka modal saat tombol hapus diklik
     const confirmDelete = (user) => {
@@ -20,9 +36,7 @@ export default function User({ users }) {
     // Fungsi: Eksekusi hapus ke backend setelah dikonfirmasi di modal
     const executeDelete = () => {
         if (userToDelete) {
-            // Menggunakan route delete yang sesuai (sesuaikan jika route backend kamu menggunakan method DELETE atau GET)
-            // Berdasarkan controller kamu sebelumnya: 'admin.data.user'
-            router.get(route('admin.data.user', userToDelete.id), {}, {
+            router.delete(route('admin.users.destroy', userToDelete.id), {
                 onSuccess: () => {
                     toast.success("User berhasil dihapus");
                     setDeleteModalOpen(false);
@@ -49,6 +63,15 @@ export default function User({ users }) {
 
                 {/* Tabel Data User */}
                 <div className="bg-white rounded-xl shadow-sm border border-batik-100 overflow-hidden">
+                    <TableToolbar
+                        search={search}
+                        onSearchChange={setSearch}
+                        sort={sort}
+                        direction={direction}
+                        onSortChange={(s, d) => { setSort(s); setDirection(d); }}
+                        sortOptions={sortOptions}
+                        searchPlaceholder="Cari nama / email..."
+                    />
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">

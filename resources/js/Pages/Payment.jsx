@@ -1,22 +1,24 @@
 import React, { useEffect } from "react";
 import { Head, router } from "@inertiajs/react";
 import WelcomeLayout from "@/Layouts/WelcomeLayout";
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
 import { Button } from "@/Components/ui/button";
 import { CheckCircle, Clock, AlertTriangle, XCircle, History, Package } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Payment({ payments }) {
+    const paymentsList = payments?.data || payments || [];
+    
     // Cari transaksi yang statusnya pending (Belum dibayar)
-    const pendingPayment = payments.find(p => p.status === 'pending');
+    const pendingPayment = paymentsList.find(p => p.status === 'pending');
     
     // Filter riwayat (Success & Failed)
-    const historyPayments = payments.filter(p => p.status !== 'pending');
+    const historyPayments = paymentsList.filter(p => p.status !== 'pending');
 
     useEffect(() => {
         // Setup Midtrans Snap (Ambil Client Key dari ENV)
         const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
-        const snapSrcUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
+        const snapSrcUrl = import.meta.env.VITE_MIDTRANS_SNAP_URL || "https://app.sandbox.midtrans.com/snap/snap.js";
 
         if(!document.querySelector(`script[src="${snapSrcUrl}"]`)){
             const script = document.createElement("script");
@@ -27,38 +29,26 @@ export default function Payment({ payments }) {
         }
     }, []);
 
-    const handlePay = (snapToken, paymentId) => {
+    const handlePay = (snapToken) => {
         if (window.snap) {
             window.snap.pay(snapToken, {
-                onSuccess: (result) => {
-                    updateStatus(paymentId, 'success');
+                onSuccess: () => {
                     toast.success("Pembayaran Berhasil!");
+                    router.reload(); // reload dari server, status dari webhook
                 },
-                onPending: (result) => {
+                onPending: () => {
                     toast.info("Menunggu pembayaran...");
-                    router.reload(); // Reload untuk update UI
+                    router.reload();
                 },
-                onError: (result) => {
-                    updateStatus(paymentId, 'failed');
+                onError: () => {
                     toast.error("Pembayaran Gagal.");
+                    router.reload();
                 },
                 onClose: () => {
-                    toast.warning("Pop-up ditutup. Silakan bayar sebelum kedaluwarsa.");
+                    toast.warning("Pop-up ditutup.");
                 }
             });
         }
-    };
-
-    // Fungsi update status menggunakan router Inertia (agar halaman refresh otomatis)
-    const updateStatus = (id, status) => {
-        router.post('/update-payment-status', { 
-            payment_id: id, 
-            status: status 
-        }, {
-            preserveScroll: true,
-            onSuccess: () => console.log("Status Updated"),
-            onError: () => toast.error("Gagal update status")
-        });
     };
 
     return (
@@ -106,17 +96,10 @@ export default function Payment({ payments }) {
 
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <Button 
-                                        onClick={() => handlePay(pendingPayment.snap_token, pendingPayment.id)}
+                                        onClick={() => handlePay(pendingPayment.snap_token)}
                                         className="flex-1 bg-batik-gold hover:bg-yellow-600 text-batik-900 font-bold h-12 text-base shadow-md"
                                     >
                                         Bayar Sekarang
-                                    </Button>
-                                    <Button 
-                                        variant="outline"
-                                        onClick={() => updateStatus(pendingPayment.id, 'failed')}
-                                        className="flex-1 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-700 h-12"
-                                    >
-                                        Batalkan Pesanan
                                     </Button>
                                 </div>
                             </div>

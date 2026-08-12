@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, router, usePage } from "@inertiajs/react"; // Tambahkan usePage
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
+import FallbackImage from "@/Components/ui/FallbackImage";
 import { motion } from "framer-motion";
 import { ShoppingCart, Eye } from "lucide-react";
 import { Button } from "@/Components/ui/button";
@@ -44,12 +45,8 @@ export default function ProductCards({ products }) {
                     {/* Image Section */}
                     <div className="relative aspect-[4/5] overflow-hidden bg-gray-100 dark:bg-zinc-800">
                         <Link href={`/products/${product.id}`}>
-                            <img
-                                src={
-                                    product.images && product.images.length > 0
-                                        ? `/storage/${product.images[0].image_path.replace("public/", "")}`
-                                        : "https://placehold.co/400x500?text=No+Image"
-                                }
+                            <FallbackImage
+                                src={product.images?.[0]?.image_path}
                                 alt={product.name}
                                 className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 ease-out"
                             />

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { router, Link, usePage } from "@inertiajs/react"; // Tambahkan usePage
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
+import { storageUrl } from "@/lib/image";
+import FallbackImage from "@/Components/ui/FallbackImage";
 import { Star, Truck, ShieldCheck, Ruler, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { toast } from "sonner";
@@ -17,7 +19,7 @@ export default function ModernDetail({ product }) {
 
     // Fallback jika tidak ada gambar
     const images = product.images && product.images.length > 0 
-        ? product.images.map(img => `/storage/${img.image_path.replace("public/", "")}`)
+        ? product.images.map(img => storageUrl(img.image_path))
         : ["https://placehold.co/600x800?text=Batik+Image"];
 
     const handleQuantity = (type) => {
@@ -58,7 +60,7 @@ export default function ModernDetail({ product }) {
                     {/* BAGIAN KIRI: GALERI FOTO */}
                     <div className="space-y-4">
                         <div className="relative aspect-[3/4] lg:aspect-square overflow-hidden rounded-xl bg-gray-100 shadow-sm border border-gray-200">
-                            <img 
+                            <FallbackImage 
                                 src={images[activeImage]} 
                                 alt={product.name} 
                                 className="object-cover w-full h-full transition-all duration-500 hover:scale-105"
@@ -79,7 +81,7 @@ export default function ModernDetail({ product }) {
                                         onClick={() => setActiveImage(idx)}
                                         className={`relative w-20 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-batik-gold' : 'border-transparent hover:border-gray-300'}`}
                                     >
-                                        <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                                        <FallbackImage src={img} alt="thumb" className="w-full h-full object-cover" />
                                     </button>
                                 ))}
                             </div>

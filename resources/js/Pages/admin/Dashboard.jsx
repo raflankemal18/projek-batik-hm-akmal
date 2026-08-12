@@ -1,7 +1,7 @@
 import React from "react";
 import AdminLayout from "@/Components/component/admin-page-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/Components/ui/card";
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
 // UPDATE IMPORTS: Gunakan icon yang lebih tegas & Import component baru
 import { ShoppingBag, CircleDollarSign, UsersRound, PackageSearch, TrendingUp } from "lucide-react";
 import ModernStatsCard from "./components/ModernStatsCard"; // Pastikan path import benar
@@ -79,21 +79,27 @@ export default function Dashboard({ usersCount, productCount, orderCount, totalP
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {Object.entries(topSelling).map(([productName, details], index) => (
+                                        {topSelling.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="3" className="px-6 py-8 text-center text-gray-500">
+                                                    Belum ada produk terjual.
+                                                </td>
+                                            </tr>
+                                        ) : topSelling.map((item, index) => (
                                             <tr key={index} className="bg-white border-b hover:bg-batik-50/50 transition-colors">
                                                 <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-4">
                                                     <div className="w-10 h-10 rounded-lg bg-batik-900 flex items-center justify-center text-batik-gold font-bold text-sm font-serif shadow-sm">
                                                         #{index + 1}
                                                     </div>
-                                                    <span className="text-base">{details.product_name}</span>
+                                                    <span className="text-base">{item.name}</span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
                                                     <span className="bg-green-50 text-green-700 font-bold text-sm px-3 py-1 rounded-full border border-green-100">
-                                                        {details.total_quantity} Pcs
+                                                        {item.total_quantity} Pcs
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right font-bold text-batik-900 text-base font-serif">
-                                                    {formatRupiah(details.harga_baju * details.total_quantity)}
+                                                    {formatRupiah(item.harga * item.total_quantity)}
                                                 </td>
                                             </tr>
                                         ))}

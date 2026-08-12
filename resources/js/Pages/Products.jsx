@@ -3,13 +3,13 @@ import WelcomeLayout from "@/Layouts/WelcomeLayout";
 import ProductCollection from "@/Components/ProductCollection";
 import { Head } from "@inertiajs/react";
 
-export default function Products({ products }) {
+export default function Products({ products, activeCategory }) {
     return (
         <WelcomeLayout>
             <Head title="Koleksi Batik - BatikNesia" />
             
             {/* Render Component Koleksi dengan Filter */}
-            <ProductCollection products={products} />
+            <ProductCollection products={products} activeCategory={activeCategory} />
             
         </WelcomeLayout>
     );

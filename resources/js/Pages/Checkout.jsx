@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { Head, usePage, router, Link } from "@inertiajs/react";
 import WelcomeLayout from "@/Layouts/WelcomeLayout";
-import { formatRupiah } from "@/helper/formatRupiah";
+import { formatRupiah } from "@/lib/format";
+import InputGroup from "@/Components/ui/Field";
+import FallbackImage from "@/Components/ui/FallbackImage";
 import { Button } from "@/Components/ui/button";
 import { MapPin, Phone, Mail, User, CreditCard, ShieldCheck, ArrowLeft, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
 
 export default function Checkout({ orders }) {
     const { auth } = usePage().props;
@@ -28,11 +29,11 @@ export default function Checkout({ orders }) {
         setValues({ ...values, [e.target.id]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         setLoading(true);
 
-        if(!values.alamat || !values.phone) {
+        if (!values.alamat || !values.phone) {
             toast.error("Mohon lengkapi alamat dan nomor telepon.", {
                 description: "Data ini diperlukan untuk pengiriman."
             });
@@ -40,51 +41,22 @@ export default function Checkout({ orders }) {
             return;
         }
 
-        const token = localStorage.getItem('auth_token');
-
-        if (!token) {
-            toast.error("Token hilang. Silakan Login ulang.");
-            router.visit('/login');
-            return;
-        }
-
-        try {
-            const response = await axios.post('/api/payment/process', {
-                ...values,
-                totalHarga,
-                orders,
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}` 
-                }
-            });
-
-            if (response.data.status === 'success') {
-                toast.success("Pesanan berhasil dibuat!", {
-                    description: "Mengalihkan ke halaman pembayaran..."
-                });
-                
-                router.visit(response.data.redirect_url); 
-            }
-
-        } catch (error) {
-            console.error("API Payment Error:", error);
-            
-            if (error.response?.status === 401) {
-                toast.error("Sesi Anda telah berakhir.", {
-                    description: "Silakan login kembali untuk melanjutkan."
-                });
-                localStorage.removeItem("auth_token");
-                router.visit('/login');
-            } else {
-                const msg = error.response?.data?.message || "Terjadi kesalahan saat memproses pesanan.";
-                toast.error("Gagal Memproses Pesanan", {
-                    description: msg
-                });
-            }
-        } finally {
-            setLoading(false);
-        }
+        router.post('/checkout', {
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            alamat: values.alamat,
+            message: values.message,
+        }, {
+            onStart: () => setLoading(true),
+            onFinish: () => setLoading(false),
+            onSuccess: () => {
+                toast.success("Pesanan berhasil dibuat!");
+            },
+            onError: (errors) => {
+                toast.error("Gagal memproses checkout.", { description: errors?.message });
+            },
+        });
     };
 
     if (!orders || orders.length === 0) {
@@ -188,8 +160,8 @@ export default function Checkout({ orders }) {
                                         {order.order_details.map((detail) => (
                                             <div key={detail.id} className="flex gap-4 mb-4 pb-4 border-b border-gray-100 last:border-0 last:mb-0 last:pb-0 group">
                                                 <div className="w-16 h-20 bg-gray-100 rounded-md overflow-hidden shrink-0 border border-gray-200">
-                                                    <img 
-                                                        src={detail.product?.images?.[0]?.image_path ? `/storage/${detail.product.images[0].image_path.replace("public/", "")}` : "https://placehold.co/100"} 
+                                                    <FallbackImage 
+                                                        src={detail.product?.images?.[0]?.image_path} 
                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                         alt={detail.product?.name}
                                                     />
@@ -250,23 +222,3 @@ export default function Checkout({ orders }) {
         </WelcomeLayout>
     );
 }
-
-// Komponen Kecil Input
-const InputGroup = ({ label, id, type = "text", value, onChange, icon, placeholder }) => (
-    <div>
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
-        <div className="relative group">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-batik-gold transition-colors">
-                {icon}
-            </div>
-            <input
-                type={type}
-                id={id}
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 bg-white focus:border-batik-gold focus:ring-1 focus:ring-batik-gold transition-all shadow-sm outline-none"
-            />
-        </div>
-    </div>
-);
