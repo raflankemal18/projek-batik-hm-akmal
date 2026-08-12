@@ -26,6 +26,58 @@ export default function Order({ payments }) {
         { label: "Status Z-A", sort: "status", direction: "desc" },
     ];
 
+    const [selectedIds, setSelectedIds] = React.useState([]);
+    const [bulkStatus, setBulkStatus] = React.useState("");
+    const [isBulkLoading, setIsBulkLoading] = React.useState(false);
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(list.map(p => p.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (e, id) => {
+        if (e.target.checked) {
+            setSelectedIds([...selectedIds, id]);
+        } else {
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        }
+    };
+
+    const handleBulkDelete = () => {
+        if (confirm("Apakah Anda yakin ingin menghapus pesanan terpilih?")) {
+            router.delete('/admin/orders/bulk', {
+                data: { ids: selectedIds },
+                onSuccess: () => {
+                    setSelectedIds([]);
+                    toast.success("Pesanan terpilih berhasil dihapus");
+                }
+            });
+        }
+    };
+
+    const handleBulkUpdateFulfillment = () => {
+        if (!bulkStatus) {
+            toast.error("Pilih status pengiriman terlebih dahulu");
+            return;
+        }
+        setIsBulkLoading(true);
+        router.patch('/admin/orders/bulk-fulfillment', {
+            ids: selectedIds,
+            status: bulkStatus
+        }, {
+            onSuccess: () => {
+                setSelectedIds([]);
+                setBulkStatus("");
+                toast.success("Status pengiriman massal diperbarui");
+                setIsBulkLoading(false);
+            },
+            onError: () => setIsBulkLoading(false)
+        });
+    };
+
     return (
         <AdminLayout>
             <div className="space-y-6">
@@ -62,10 +114,52 @@ export default function Order({ payments }) {
                         sortOptions={sortOptions}
                         searchPlaceholder="Cari ID / nama / phone / alamat..."
                     />
+                    {selectedIds.length > 0 && (
+                        <div className="flex items-center gap-4 p-4 border-b border-gray-100 bg-gray-50/50">
+                            <span className="text-sm font-medium text-gray-700">
+                                {selectedIds.length} pesanan terpilih
+                            </span>
+                            <div className="flex items-center gap-2 ml-auto">
+                                <div className="flex items-center gap-2 mr-4 border-r pr-4">
+                                    <select 
+                                        className="text-sm border-gray-200 rounded-md py-1.5 pl-3 pr-8 focus:ring-batik-gold focus:border-batik-gold"
+                                        value={bulkStatus}
+                                        onChange={(e) => setBulkStatus(e.target.value)}
+                                    >
+                                        <option value="" disabled>Pilih Status...</option>
+                                        <option value="processing">Diproses</option>
+                                        <option value="shipped">Dikirim</option>
+                                        <option value="delivered">Diterima</option>
+                                    </select>
+                                    <button 
+                                        onClick={handleBulkUpdateFulfillment}
+                                        disabled={isBulkLoading || !bulkStatus}
+                                        className="px-4 py-1.5 bg-batik-900 hover:bg-batik-800 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                                    >
+                                        {isBulkLoading ? "Updating..." : "Update Status"}
+                                    </button>
+                                </div>
+                                <button 
+                                    onClick={handleBulkDelete}
+                                    className="px-4 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-md text-sm font-medium transition-colors border border-red-200"
+                                >
+                                    Hapus Terpilih
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
                                 <tr>
+                                    <th className="px-6 py-4 w-4">
+                                        <input 
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-batik-600 shadow-sm focus:border-batik-300 focus:ring focus:ring-batik-200 focus:ring-opacity-50"
+                                            checked={list.length > 0 && selectedIds.length === list.length}
+                                            onChange={handleSelectAll}
+                                        />
+                                    </th>
                                     <th className="px-6 py-4">ID Order</th>
                                     <th className="px-6 py-4">Pelanggan</th>
                                     <th className="px-6 py-4">Detail Item</th>
@@ -76,12 +170,20 @@ export default function Order({ payments }) {
                             <tbody className="divide-y divide-gray-100">
                                 {list.length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                                             Belum ada pesanan masuk.
                                         </td>
                                     </tr>
                                 ) : list.map((payment) => (
                                     <tr key={payment.id} className="hover:bg-gray-50 transition-colors align-top">
+                                        <td className="px-6 py-4">
+                                            <input 
+                                                type="checkbox"
+                                                className="rounded border-gray-300 text-batik-600 shadow-sm focus:border-batik-300 focus:ring focus:ring-batik-200 focus:ring-opacity-50"
+                                                checked={selectedIds.includes(payment.id)}
+                                                onChange={(e) => handleSelectOne(e, payment.id)}
+                                            />
+                                        </td>
                                         <td className="px-6 py-4 font-mono text-xs font-bold text-batik-900">
                                             #{payment.id}
                                         </td>

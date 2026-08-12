@@ -42,8 +42,11 @@ Route::middleware('auth', 'role:admin')->group(function () {
     Route::post('/admin/products', [ProductController::class, 'store'])->name('admin.products.store');
     Route::put('/admin/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
     Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
+    Route::delete('/admin/users/bulk', [UserController::class, 'bulkDelete'])->name('admin.users.bulk_destroy');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     Route::patch('/admin/orders/{order}/fulfillment', [AdminDashboardController::class, 'updateFulfillment'])->name('admin.orders.fulfillment');
+    Route::delete('/admin/orders/bulk', [OrderController::class, 'bulkDelete'])->name('admin.orders.bulk.delete');
+    Route::patch('/admin/orders/bulk-fulfillment', [OrderController::class, 'bulkUpdateFulfillment'])->name('admin.orders.bulk.fulfillment');
     Route::get('/admin/logs/export', [ActivityLogController::class, 'export'])->name('admin.logs.export');
     Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs');
     Route::get('/admin/banners', [\App\Http\Controllers\Admin\BannerController::class, 'index'])->name('admin.banners');

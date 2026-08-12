@@ -46,4 +46,31 @@ class OrderController extends Controller
 
         return $response;
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:payments,id'
+        ]);
+
+        Payment::whereIn('id', $request->ids)->delete();
+
+        return redirect()->back()->with('success', 'Pesanan terpilih berhasil dihapus.');
+    }
+
+    public function bulkUpdateFulfillment(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:payments,id',
+            'status' => 'required|in:processing,shipped,delivered'
+        ]);
+
+        \App\Models\Order::whereIn('payment_id', $request->ids)->update([
+            'fulfillment_status' => $request->status
+        ]);
+
+        return redirect()->back()->with('success', 'Status pengiriman terpilih berhasil diperbarui.');
+    }
 }

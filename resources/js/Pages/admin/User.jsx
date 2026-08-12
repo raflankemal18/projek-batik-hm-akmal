@@ -13,6 +13,10 @@ export default function User({ users }) {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
 
+    // State untuk Bulk Actions
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+
     const {
         search, setSearch,
         sort, setSort, direction, setDirection,
@@ -50,6 +54,43 @@ export default function User({ users }) {
         }
     };
 
+    // Fungsi: Select All (Hanya non-admin)
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            const ids = users.data.filter(u => u.role !== 'admin').map(u => u.id);
+            setSelectedIds(ids);
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    // Fungsi: Select individual
+    const handleSelect = (e, id) => {
+        if (e.target.checked) {
+            setSelectedIds([...selectedIds, id]);
+        } else {
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        }
+    };
+
+    // Fungsi: Eksekusi Bulk Delete
+    const executeBulkDelete = () => {
+        if (selectedIds.length > 0) {
+            router.delete('/admin/users/bulk', {
+                data: { ids: selectedIds },
+                onSuccess: () => {
+                    toast.success("User terpilih berhasil dihapus");
+                    setBulkDeleteModalOpen(false);
+                    setSelectedIds([]);
+                },
+                onError: () => {
+                    toast.error("Gagal menghapus user terpilih");
+                    setBulkDeleteModalOpen(false);
+                }
+            });
+        }
+    };
+
     return (
         <AdminLayout>
             <div className="space-y-6">
@@ -59,6 +100,15 @@ export default function User({ users }) {
                         <h1 className="text-3xl font-serif font-bold text-gray-900">Data Pelanggan</h1>
                         <p className="text-gray-500">Kelola daftar pengguna terdaftar di BatikNesia.</p>
                     </div>
+                    {selectedIds.length > 0 && (
+                        <button
+                            onClick={() => setBulkDeleteModalOpen(true)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Hapus Terpilih ({selectedIds.length})
+                        </button>
+                    )}
                 </div>
 
                 {/* Tabel Data User */}
@@ -76,6 +126,17 @@ export default function User({ users }) {
                         <table className="w-full text-sm text-left text-gray-500">
                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
                                 <tr>
+                                    <th className="px-6 py-4 w-12 text-center">
+                                        <input 
+                                            type="checkbox" 
+                                            className="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                                            checked={
+                                                users.data.filter(u => u.role !== 'admin').length > 0 &&
+                                                selectedIds.length === users.data.filter(u => u.role !== 'admin').length
+                                            }
+                                            onChange={handleSelectAll}
+                                        />
+                                    </th>
                                     <th className="px-6 py-4 w-16 text-center">No</th>
                                     <th className="px-6 py-4">Nama Lengkap</th>
                                     <th className="px-6 py-4">Email</th>
@@ -87,6 +148,16 @@ export default function User({ users }) {
                                 {users.data.length > 0 ? (
                                     users.data.map((user, index) => (
                                         <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 text-center">
+                                                {user.role !== 'admin' && (
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                                                        checked={selectedIds.includes(user.id)}
+                                                        onChange={(e) => handleSelect(e, user.id)}
+                                                    />
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4 text-center font-medium text-gray-900">
                                                 {index + 1 + (users.current_page - 1) * users.per_page}
                                             </td>
@@ -129,7 +200,7 @@ export default function User({ users }) {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                                             Tidak ada data user ditemukan.
                                         </td>
                                     </tr>
@@ -153,6 +224,17 @@ export default function User({ users }) {
                 title="Hapus Pengguna?"
                 description={`Apakah Anda yakin ingin menghapus user "${userToDelete?.name}"? Tindakan ini akan menghapus akses login dan data terkait secara permanen.`}
                 confirmText="Hapus User"
+                cancelText="Batal"
+                variant="danger"
+            />
+
+            <ConfirmDialog 
+                isOpen={bulkDeleteModalOpen}
+                onClose={() => setBulkDeleteModalOpen(false)}
+                onConfirm={executeBulkDelete}
+                title="Hapus Pengguna Terpilih?"
+                description={`Apakah Anda yakin ingin menghapus ${selectedIds.length} user yang dipilih? Tindakan ini akan menghapus akses login dan data terkait secara permanen.`}
+                confirmText="Hapus Terpilih"
                 cancelText="Batal"
                 variant="danger"
             />
