@@ -18,7 +18,8 @@ import {
     Menu, 
     Bell, 
     LogOut,
-    Search 
+    Search,
+    ScrollText 
 } from "lucide-react";
 
 export default function AdminLayout({ children }) {
@@ -60,6 +61,9 @@ export default function AdminLayout({ children }) {
                             </AdminNavLink>
                             <AdminNavLink href="/admin/users" active={route().current('admin.users')} icon={<Users />}>
                                 Data Pelanggan
+                            </AdminNavLink>
+                            <AdminNavLink href="/admin/logs" active={route().current('admin.logs')} icon={<ScrollText />}>
+                                Log Aktivitas
                             </AdminNavLink>
                         </nav>
                     </div>
@@ -103,6 +107,7 @@ export default function AdminLayout({ children }) {
                                     <AdminNavLink href="/admin/orders" icon={<ShoppingBag />}>Pesanan</AdminNavLink>
                                     <AdminNavLink href="/admin/products" icon={<Package />}>Produk</AdminNavLink>
                                     <AdminNavLink href="/admin/users" icon={<Users />}>Pelanggan</AdminNavLink>
+                                    <AdminNavLink href="/admin/logs" icon={<ScrollText />}>Log</AdminNavLink>
                                 </nav>
                             </div>
                         </SheetContent>
