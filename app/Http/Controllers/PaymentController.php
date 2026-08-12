@@ -2,66 +2,89 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CheckoutRequest;
-use App\Services\PaymentService;
+use App\Models\Order;
 use App\Models\Payment;
+use App\Services\MidtransService;
+use App\Services\OrderNumberService;
+use App\Services\PaymentWebhookService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PaymentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $payments = Payment::with(['paymentDetails.product', 'user'])
             ->where('user_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderByDesc('created_at')
+            ->paginate(10);
 
         return Inertia::render('Payment', ['payments' => $payments]);
     }
 
-    public function storeApi(CheckoutRequest $request, PaymentService $paymentService)
+    public function store(Request $request, MidtransService $midtransService)
     {
-        $user = auth('api')->user();
+        $user = $request->user();
 
-        if (!$user) {
-            return response()->json(['status' => 'error', 'message' => 'Token Invalid atau Expired'], 401);
+        $order = Order::where('user_id', $user->id)
+            ->where('status', 'draft')
+            ->lockForUpdate()
+            ->first();
+
+        if (! $order) {
+            return redirect()->back()->with('error', 'Tidak ada order aktif');
         }
 
-        try {
-            $paymentService->createTransaction($user, $request->validated());
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Pesanan berhasil dibuat',
-                'redirect_url' => route('pembayaran') 
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error', 
-                'message' => 'Gagal memproses pembayaran: ' . $e->getMessage()
-            ], 500);
+        $dbTotal = $order->details->sum(fn ($d) => $d->harga * $d->quantity);
+        if ($dbTotal != $order->total_harga) {
+            $order->update(['total_harga' => $dbTotal]);
         }
+
+        $existingPayment = Payment::where('order_id', $order->id)
+            ->whereIn('status', ['pending', 'success'])
+            ->lockForUpdate()
+            ->first();
+
+        if ($existingPayment && $existingPayment->status === 'success') {
+            return redirect()->route('pembayaran')->with('payment', $existingPayment);
+        }
+
+        if ($existingPayment && $existingPayment->snap_token) {
+            return redirect()->route('pembayaran')->with('payment', $existingPayment);
+        }
+
+        $transactionId = OrderNumberService::generate();
+
+        $payment = Payment::create([
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'transaction_id' => $transactionId,
+            'total_harga' => $order->total_harga,
+            'status' => 'pending',
+        ]);
+
+        $snapToken = $midtransService->getSnapToken([
+            'transaction_details' => [
+                'order_id' => $transactionId,
+                'gross_amount' => (int) $order->total_harga,
+            ],
+            'customer_details' => [
+                'first_name' => $order->name ?? $user->name,
+                'email' => $order->email ?? $user->email,
+                'phone' => $order->phone ?? '',
+            ],
+        ]);
+
+        $payment->update(['snap_token' => $snapToken]);
+        $order->update(['status' => 'pending_payment']);
+
+        return redirect()->route('pembayaran')->with('payment', $payment);
     }
 
-    public function updateStatus(Request $request)
+    public function webhook(Request $request, PaymentWebhookService $webhookService)
     {
-        $payment = Payment::find($request->payment_id);
-        
-        if ($payment) {
-            $payment->status = $request->status;            
-            if ($request->status == 'success' || $request->status == 'capture' || $request->status == 'settlement') {
-                $payment->status = 'success';
-                $payment->snap_token = null;
-            } elseif ($request->status == 'expire' || $request->status == 'cancel') {
-                 $payment->status = 'failed';
-            }
+        $webhookService->handle($request->all());
 
-            $payment->save();
-            return redirect()->back()->with('success', 'Status pembayaran diperbarui!');
-        }
-
-        return redirect()->back()->with('error', 'Transaksi tidak ditemukan.');
+        return response()->json(['status' => 'ok']);
     }
 }

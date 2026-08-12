@@ -22,7 +22,7 @@ class RoleMiddleware
 
         // Jika peran bukan admin, periksa apakah peran pengguna sesuai dengan peran yang diperlukan
         if ($request->user()->role !== $role) {
-            abort(403, 'Unauthorized action.' . $request->user()->role);
+            abort(403, 'Unauthorized action.'.$request->user()->role);
         }
 
         return $next($request);

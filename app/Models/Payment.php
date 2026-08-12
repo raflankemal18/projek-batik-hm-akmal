@@ -9,14 +9,25 @@ class Payment extends Model
 {
     use HasFactory;
 
+    protected $fillable = ['user_id', 'order_id', 'transaction_id', 'total_harga', 'snap_token', 'status', 'paid_at', 'id'];
 
-    protected $fillable = ['user_id', 'total_harga', 'snap_token', 'id'];
+    protected $casts = [
+        'total_harga' => 'decimal:2',
+        'paid_at' => 'datetime',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
+
     public function paymentDetails()
     {
         return $this->hasMany(PaymentDetail::class, 'payment_id', 'id');
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id', 'id');
     }
 }

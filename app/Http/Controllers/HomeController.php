@@ -2,49 +2,102 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Carts;
-use App\Models\Order;
-use App\Models\Products;
+use App\Models\Product;
+use App\Services\CartService;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class HomeController extends Controller
 {
+    public function __construct(
+        private ProductService $productService,
+        private CartService $cartService,
+    ) {}
+
     public function index()
     {
-        $products = Products::with(['sizes', 'images'])->get();
+        $products = $this->productService->getAllPaginated(12)->items();
+
         return Inertia::render('Welcome', ['products' => $products]);
     }
 
-    public function products()
+    public function products(Request $request)
     {
-        $products = Products::with(['sizes', 'images'])->get();
-        return Inertia::render('Products', ['products' => $products]);
+        $category = (string) $request->query('category', 'all');
+
+        $products = $this->productService->getAllPaginated(
+            12,
+            $request->query('search'),
+            $request->query('sort', 'created_at'),
+            $request->query('direction', 'desc'),
+            $category,
+        );
+
+        return Inertia::render('Products', [
+            'products' => $products->items(),
+            'activeCategory' => $category,
+        ]);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $products = Products::with(['sizes', 'images'])->findOrFail($id);
-        return Inertia::render('Test', ['products' => $products]);
+        $product = $this->productService->findWithRelations($id);
+
+        $related = Product::with(['sizes', 'images' => fn ($q) => $q->limit(1)])
+            ->when($product->category, fn ($q) => $q->where('category', $product->category))
+            ->where('id', '!=', $product->id)
+            ->inRandomOrder()
+            ->limit(4)
+            ->get();
+
+        if ($related->count() < 4) {
+            $extra = Product::with(['sizes', 'images' => fn ($q) => $q->limit(1)])
+                ->where('id', '!=', $product->id)
+                ->whereNotIn('id', $related->pluck('id'))
+                ->inRandomOrder()
+                ->limit(4 - $related->count())
+                ->get();
+
+            $related = $related->concat($extra);
+        }
+
+        return Inertia::render('ProductDetail', [
+            'products' => $product,
+            'relatedProducts' => $related,
+        ]);
     }
+
+    public function about()
+    {
+        return Inertia::render('about');
+    }
+
     public function keranjang()
     {
-        try {
-            $keranjangs = Carts::with(['details.product.images', 'user'])
-                ->where('user_id', auth()->user()->id)
-                ->get();
-            return Inertia::render('Keranjang', ['keranjangs' => $keranjangs]);
-        } catch (\Exception $e) {
-            Log::error('Failed to load cart:', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Failed to retrieve cart', 'error' => $e->getMessage()], 409);
-        }
+        $keranjangs = $this->cartService->getCartWithProducts(auth()->user());
+
+        return Inertia::render('Keranjang', ['keranjangs' => $keranjangs]);
     }
 
-    public function co()
+    public function checkout()
     {
-        $orders = Order::with(['orderDetails.product.images', 'user'])->where('user_id', auth()->user()->id)->get();
-        Log::info('orders:', ['orders' => $orders->toArray()]);
+        $cart = $this->cartService->getCartWithProducts(auth()->user())->first();
+
+        $orders = $cart
+            ? [[
+                'id' => $cart->id,
+                'order_details' => $cart->details->map(fn ($d) => [
+                    'id' => $d->id,
+                    'product' => $d->product,
+                    'size' => $d->size,
+                    'quantity' => $d->quantity,
+                    'harga' => (float) $d->product->harga,
+                ]),
+                'total_harga' => (float) $cart->details->sum(fn ($d) => $d->product->harga * $d->quantity),
+            ]]
+            : [];
+
         return Inertia::render('Checkout', ['orders' => $orders]);
     }
 }

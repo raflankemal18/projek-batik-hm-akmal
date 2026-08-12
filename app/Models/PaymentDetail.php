@@ -9,8 +9,8 @@ class PaymentDetail extends Model
 {
     use HasFactory;
 
-
     protected $fillable = ['payment_id', 'product_id', 'name', 'email', 'phone', 'alamat',  'size', 'quantity', 'harga'];
+
     public function payment()
     {
         return $this->belongsTo(Payment::class, 'payment_id', 'id');
@@ -18,6 +18,6 @@ class PaymentDetail extends Model
 
     public function product()
     {
-        return $this->belongsTo(Products::class, 'product_id', 'id');
+        return $this->belongsTo(Product::class, 'product_id', 'id');
     }
 }

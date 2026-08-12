@@ -32,20 +32,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
-        $user = Auth::user();
-        $token = auth('api')->login($user);
-
-        if (!$token) {
-            dd("ERROR: Token JWT Gagal Dibuat. Cek User.php (JWTSubject) dan Config Auth (Guard API)");
-        }
-
-        $cookie = cookie('jwt_token', $token, 60, null, null, false, false); 
-
-        if ($request->user()->role === 'admin') {
-            return redirect()->route('admin.dashboard')->withCookie($cookie);
-        } 
-
-        return redirect()->intended(route('home'))->withCookie($cookie);
+        return redirect()->route('dashboard');
     }
 
     /**

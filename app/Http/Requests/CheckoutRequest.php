@@ -11,7 +11,7 @@ class CheckoutRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user() !== null;
     }
 
     /**
@@ -26,8 +26,7 @@ class CheckoutRequest extends FormRequest
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
             'alamat' => 'required|string',
-            'totalHarga' => 'required|numeric',
-            'orders' => 'required|array',
+            'message' => 'nullable|string',
         ];
     }
 }

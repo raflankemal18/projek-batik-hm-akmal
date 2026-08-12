@@ -6,9 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
@@ -48,14 +47,6 @@ class User extends Authenticatable implements JWTSubject
 
     public function carts()
     {
-        return $this->hasMany(Carts::class, 'user_id', 'id');
-    }
-
-    public function getJWTIdentifier() {
-        return $this->getKey();
-    }
-
-    public function getJWTCustomClaims() {
-        return [];
+        return $this->hasMany(Cart::class, 'user_id', 'id');
     }
 }
