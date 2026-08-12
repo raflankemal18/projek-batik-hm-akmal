@@ -45,6 +45,12 @@ Route::middleware('auth', 'role:admin', 'throttle:30,1')->group(function () {
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     Route::patch('/admin/orders/{order}/fulfillment', [AdminDashboardController::class, 'updateFulfillment'])->name('admin.orders.fulfillment');
     Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs');
+    Route::get('/admin/banners', [\App\Http\Controllers\Admin\BannerController::class, 'index'])->name('admin.banners');
+    Route::post('/admin/banners', [\App\Http\Controllers\Admin\BannerController::class, 'store'])->name('admin.banners.store');
+    Route::put('/admin/banners/{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'update'])->name('admin.banners.update');
+    Route::delete('/admin/banners/{banner}', [\App\Http\Controllers\Admin\BannerController::class, 'destroy'])->name('admin.banners.destroy');
+    Route::patch('/admin/banners/{banner}/toggle', [\App\Http\Controllers\Admin\BannerController::class, 'toggle'])->name('admin.banners.toggle');
+
 });
 
 // Auth + user

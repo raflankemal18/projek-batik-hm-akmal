@@ -18,8 +18,9 @@ class HomeController extends Controller
     public function index()
     {
         $products = $this->productService->getAllPaginated(12)->items();
+        $banners = \App\Models\Banner::where('is_active', true)->get();
 
-        return Inertia::render('Welcome', ['products' => $products]);
+        return Inertia::render('Welcome', ['products' => $products, 'banners' => $banners]);
     }
 
     public function products(Request $request)
