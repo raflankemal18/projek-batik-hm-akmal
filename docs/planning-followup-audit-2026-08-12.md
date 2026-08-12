@@ -156,17 +156,17 @@ Eksekusi per fitur, **masing-masing butuh mini-spec tersendiri yang dikonfirmasi
 
 | Fitur | Catatan desain yang perlu diputuskan |
 |---|---|
-| Wishlist | Schema `wishlists(user_id, product_id)`; toggle di `ProductDetail`; halaman `/wishlist`. |
+| ~~Wishlist~~ | (Selesai) Schema `wishlists(user_id, product_id)`; toggle di `ProductDetail`; halaman `/wishlist`. |
 | ~~Review & rating~~ | (Skip sesuai request user 2026-08-12) Schema `reviews`; moderasi vs auto-publish; rata-rata rating di kartu produk. |
-| Search bar global | Input di navbar → `GET /search?q=` → halaman hasil. |
-| Notifikasi admin order baru | Badge sidebar via polling 30s / Inertia shared prop. |
+| ~~Search bar global~~ | (Selesai) Input di navbar → `GET /search?q=` → halaman hasil. |
+| ~~Notifikasi admin order baru~~ | (Selesai) Badge sidebar pesanan masuk (jika ada pesanan berstatus paid/processing). |
 | Bulk actions admin | Checkbox multi-select + hapus/ubah massal di `admin/User.jsx`, `admin/Order.jsx`. |
-| Export laporan CSV | `GET /admin/orders/export.csv` (streamed response). |
-| Manajemen banner/promo | Tabel `banners` + CRUD admin + render di `ModernHero.jsx` dari prop. |
+| ~~Export laporan CSV~~ | (Selesai) `GET /admin/orders/export` (streamed response). |
+| ~~Manajemen banner/promo~~ | (Selesai) Tabel `banners` + CRUD admin + render di `ModernHero.jsx` dari prop. |
 | Role & permission granular | Spatie Laravel Permission; refactor `RoleMiddleware`; peran menengah (staff gudang). |
 | Notifikasi in-app user | Update status pesanan/promo. |
 | Live chat / kontak CS | Butuh third-party (Crisp/Tawk) — di luar scope aplikasi sendiri. |
-| Tracking resi | Field nomor resi/kurir di orders + tampilan user (tumpang tindih dengan 2.2). |
+| ~~Tracking resi~~ | (Selesai) Field nomor resi/kurir di orders + tampilan user. |
 
 ### Verifikasi Tahap 3
 - Per fitur: `php artisan test` + `npm run build` + smoke manual.
@@ -195,9 +195,9 @@ Eksekusi per fitur, **masing-masing butuh mini-spec tersendiri yang dikonfirmasi
 - [x] **Tahap 1** — logs:cleanup + scheduler.
 - [x] **Tahap 1** — 8 test D4 §8 + test lama hijau.
 - [x] **Tahap 2** — invoice wire, fulfillment, pagination Payment, cart badge, (user dashboard dihapus sesuai request user).
-- [x] **Tahap 3** — Wishlist (schema, tombol heart aktif, badge navbar, halaman `/wishlist`).
-- [x] **UI/UX Tambahan** — Refactor Profile Edit & ForgotPassword sesuai tema BatikNesia, ubah tombol logout menjadi Dropdown Profile modern.
-- [ ] **Tahap 3** — Sisa fitur Tahap 3 (per fitur dengan mini-spec terkonfirmasi).
+- [x] **Tahap 3** — Wishlist, Search bar global, Notifikasi admin, Export laporan (CSV & PDF), Manajemen banner/promo, Tracking resi.
+- [x] **UI/UX Tambahan** — Refactor Profile Edit & ForgotPassword, Layout Sidebar Admin (sticky, collapse persisten, absolute minimize button), Toggle View Switch (Admin/Store).
+- [ ] **Tahap 3** — Sisa fitur Tahap 3 (Bulk Actions, Roles/Permissions).
 - [x] **Tahap 4** — analytics + data dashboard asli (deltas & recharts).
 
 ---
