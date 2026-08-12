@@ -11,6 +11,14 @@ class OrderController extends Controller
 {
     public function export(Request $request)
     {
+        $format = $request->query('format', 'csv');
+
+        if ($format === 'pdf') {
+            $payments = \App\Models\Payment::with("user", "payment_details.product")->get();
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.orders', compact('payments'));
+            return $pdf->download("orders_export_" . date("Ymd_His") . ".pdf");
+        }
+
         $response = new StreamedResponse(function() {
             $handle = fopen("php://output", "w");
             
