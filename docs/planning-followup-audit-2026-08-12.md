@@ -163,9 +163,9 @@ Eksekusi per fitur, **masing-masing butuh mini-spec tersendiri yang dikonfirmasi
 | ~~Bulk actions admin~~ | (Selesai) Checkbox multi-select + hapus/ubah massal di `admin/User.jsx`, `admin/Order.jsx`, `admin/Products.jsx`. |
 | ~~Export laporan CSV~~ | (Selesai) `GET /admin/orders/export` (streamed response). |
 | ~~Manajemen banner/promo~~ | (Selesai) Tabel `banners` + CRUD admin + render di `ModernHero.jsx` dari prop. |
-| Role & permission granular | Spatie Laravel Permission; refactor `RoleMiddleware`; peran menengah (staff gudang). |
+| ~~Role & permission granular~~ | (Skip sesuai request user 2026-08-12) Spatie Laravel Permission; refactor `RoleMiddleware`; peran menengah (staff gudang). |
 | ~~Notifikasi in-app user~~ | (Selesai) Notifikasi via DB; Navbar lonceng; Update status pesanan/promo. |
-| Live chat / kontak CS | Butuh third-party (Crisp/Tawk) — di luar scope aplikasi sendiri. |
+| ~~Live chat / kontak CS~~ | (Skip) Butuh third-party (Crisp/Tawk) — di luar scope aplikasi sendiri. |
 | ~~Tracking resi~~ | (Selesai) Field nomor resi/kurir di orders + tampilan user. |
 
 ### Verifikasi Tahap 3
@@ -197,7 +197,7 @@ Eksekusi per fitur, **masing-masing butuh mini-spec tersendiri yang dikonfirmasi
 - [x] **Tahap 2** — invoice wire, fulfillment, pagination Payment, cart badge, (user dashboard dihapus sesuai request user).
 - [x] **Tahap 3** — Wishlist, Search bar global, Notifikasi admin, Export laporan (CSV & PDF), Manajemen banner/promo, Tracking resi, Bulk Actions (User, Order, Produk), Notifikasi In-app User.
 - [x] **UI/UX Tambahan** — Refactor Profile Edit & ForgotPassword, Layout Sidebar Admin (sticky, collapse persisten, absolute minimize button), Toggle View Switch (Admin/Store).
-- [ ] **Tahap 3** — Sisa fitur Tahap 3 (Roles/Permissions).
+- [x] **Tahap 3 Selesai** — (Roles/Permissions di-skip sesuai permintaan).
 - [x] **Tahap 4** — analytics + data dashboard asli (deltas & recharts).
 
 ---
