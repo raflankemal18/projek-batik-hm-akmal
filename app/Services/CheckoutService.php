@@ -45,7 +45,13 @@ class CheckoutService
 
                 if (! $productSize || $productSize->stock < $detail->quantity) {
                     throw new InsufficientStockException(
-                        "Stok tidak cukup untuk {$detail->product->name} size {$detail->size}"
+                        "Stok tidak cukup untuk {$detail->product->name} size {$detail->size}",
+                        [
+                            'product_id' => $detail->product_id,
+                            'size' => $detail->size,
+                            'requested_qty' => $detail->quantity,
+                            'available' => $productSize->stock ?? 0,
+                        ]
                     );
                 }
 
@@ -61,6 +67,7 @@ class CheckoutService
                     'size' => $detail->size,
                     'quantity' => $detail->quantity,
                     'harga' => $harga,
+                    'subtotal' => $subtotal,
                 ];
             }
 
@@ -77,8 +84,23 @@ class CheckoutService
             ]);
 
             foreach ($orderDetails as $detail) {
-                OrderDetail::create(array_merge($detail, ['order_id' => $order->id]));
+                OrderDetail::create(array_merge(
+                    array_diff_key($detail, ['subtotal' => null]),
+                    ['order_id' => $order->id]
+                ));
             }
+
+            AuditLogService::recordTransaction('checkout.create', $order, 'Draft order dibuat', [
+                'order_id' => $order->id,
+                'items' => array_map(fn ($d) => [
+                    'product_id' => $d['product_id'],
+                    'size' => $d['size'],
+                    'qty' => $d['quantity'],
+                    'harga' => $d['harga'],
+                    'subtotal' => $d['subtotal'],
+                ], $orderDetails),
+                'total' => $totalHarga,
+            ]);
 
             $cart->details()->delete();
             $cart->delete();

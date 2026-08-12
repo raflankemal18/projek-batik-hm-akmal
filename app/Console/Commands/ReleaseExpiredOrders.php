@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Order;
+use App\Services\AuditLogService;
 use App\Services\InventoryManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +25,14 @@ class ReleaseExpiredOrders extends Command
             foreach ($expired as $order) {
                 foreach ($order->details as $detail) {
                     if ($detail->product_size_id) {
-                        InventoryManager::restore($detail->product_size_id, $detail->quantity);
+                        InventoryManager::restore($detail->product_size_id, $detail->quantity, 'draft_expired');
                     }
                 }
                 $order->update(['status' => 'cancelled']);
+
+                AuditLogService::recordTransaction('draft.expired', $order, 'Draft order kadaluarsa', [
+                    'order_id' => $order->id,
+                ]);
             }
         });
 

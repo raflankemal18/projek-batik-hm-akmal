@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\AuditLogService;
 use App\Services\MidtransService;
 use App\Services\OrderNumberService;
 use App\Services\PaymentWebhookService;
@@ -77,6 +78,12 @@ class PaymentController extends Controller
 
         $payment->update(['snap_token' => $snapToken]);
         $order->update(['status' => 'pending_payment']);
+
+        AuditLogService::recordTransaction('payment.initiated', $payment, 'Payment + snap token', [
+            'payment_id' => $payment->id,
+            'transaction_id' => $payment->transaction_id,
+            'total_harga' => $payment->total_harga,
+        ]);
 
         return redirect()->route('pembayaran')->with('payment', $payment);
     }

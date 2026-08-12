@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Services\AuditLogService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -43,6 +44,11 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            AuditLogService::recordUser('login.failed', 'Password salah', [
+                'email' => $this->string('email'),
+                'reason' => 'invalid_credentials',
+            ]);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),

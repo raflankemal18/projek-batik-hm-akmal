@@ -2,7 +2,7 @@
 
 **Kode Dokumen:** D4
 **Tanggal:** 2026-08-12
-**Status:** Approved
+**Status:** Dieksekusi (2026-08-12) — lihat catatan koreksi di §1 dan §10.
 **Dependency:** D1 + D3 selesai (WAJIB — dokumen ini memasang hook logging ke `CheckoutService`, `PaymentWebhookService`, `InventoryManager`, `MidtransService`, dan Controllers hasil refactor D1; semua class itu baru ada setelah D1+D3 dieksekusi. Jangan mulai dokumen ini lebih dulu / paralel dengan D1 atau D3). Lihat [00-index.md](./00-index.md).
 
 ## Tujuan
@@ -39,7 +39,7 @@ created_at
 
 - **Append-only** — tidak ada route update/delete log.
 - **Jangan log**: password, token, snap_token, server key, kartu kredit → sanitize di formatter.
-- **DB::afterCommit** — tulis log setelah transaksi bisnis commit, supaya rollback tidak meninggalkan log yatim.
+- **~~DB::afterCommit~~ — KOREKSI (dieksekusi 2026-08-12):** Ide awalnya bagus (log ditulis setelah transaksi bisnis commit, supaya rollback tidak meninggalkan log yatim), tapi **tidak dipakai di implementasi final**. Dua alasan: (1) `DB::afterCommit()` **tidak pernah fire di dalam test** yang pakai `RefreshDatabase` — trait itu membungkus tiap test dalam transaksi yang di-rollback di akhir, bukan di-commit, jadi semua assertion `ActivityLog::where(...)->exists()` selalu `false` meski kodenya benar. Dites langsung dan gagal 7 dari 8 test sebelum di-fix. (2) Ternyata **tidak perlu** — implementasi final menaruh tiap panggilan `AuditLogService::record*()` PERSIS di dalam blok `DB::transaction()` yang sama dengan aksi bisnis yang di-log (atau di luar transaksi kalau aksinya sudah final/transaksinya sudah rollback duluan, contoh: `stock.rejected` di-log dari exception handler `bootstrap/app.php`, BUKAN dari titik `throw`-nya, karena saat itu transaksi checkout-nya sudah pasti rollback). Dengan penempatan begini, `ActivityLog::create()` langsung (tanpa `afterCommit`) otomatis ikut rollback bareng aksi bisnisnya kalau ada yang gagal — guarantee "no orphan log" tetap dapat, tanpa masalah testability. Lihat `App\Exceptions\InsufficientStockException` (property `$context` baru) dan `bootstrap/app.php` untuk pola log-setelah-rollback ini.
 
 ## 2. AuditLogService
 
@@ -270,12 +270,14 @@ Schedule::command('logs:cleanup')->daily();
 
 ## 10. Checklist Done
 
-- [ ] Migration `activity_logs` + index + model `ActivityLog`
-- [ ] `AuditLogService` + sanitizer + DB::afterCommit
-- [ ] Hooks di semua event user (register, login, logout, profile, password)
-- [ ] Hooks di semua event admin (login, product CRUD, user delete)
-- [ ] Hooks di semua event transaksi (checkout, payment, webhook, stock)
-- [ ] `/admin/logs` + filter + pagination
-- [ ] `Pages/admin/Logs.jsx` (tab + table + filter + expandable context)
-- [ ] `logs:cleanup` + scheduler
-- [ ] Test hijau
+- [x] Migration `activity_logs` + index + model `ActivityLog`
+- [x] `AuditLogService` + sanitizer (bukan `DB::afterCommit` — lihat koreksi di §1)
+- [x] Hooks di semua event user (register, login, logout, profile, password, account.delete)
+- [x] Hooks di semua event admin (admin.login, product CRUD, user.delete)
+- [x] Hooks di semua event transaksi (checkout.create, stock.decrement/restore/rejected, webhook.received, payment.initiated/paid/failed/expired, order.cancelled, draft.expired)
+- [x] `/admin/logs` + filter (type/date/search) + pagination
+- [x] `Pages/admin/Logs.jsx` (tab + table + filter + expandable context)
+- [x] `logs:cleanup` + scheduler (`Schedule::command('logs:cleanup')->daily()`)
+- [x] Test hijau — 8 test baru (`tests/Feature/ActivityLogTest.php`), full suite 57/57 passed
+
+**Tidak dieksekusi (di luar peta event D4, tidak ada di controller manapun saat ini):** `user.update` (tidak ada admin action untuk update user selain delete).

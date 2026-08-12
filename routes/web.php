@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
@@ -22,14 +23,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return auth()->user()->role === 'admin'
             ? redirect()->route('admin.dashboard')
-            : redirect()->route('home');
+            : redirect()->route('user.dashboard');
     })->name('dashboard');
 });
 
 // Auth + admin
 Route::middleware('auth', 'role:admin', 'throttle:30,1')->group(function () {
     Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/admin/search', [AdminDashboardController::class, 'search'])->name('admin.search');
     Route::get('/admin/users', [AdminDashboardController::class, 'users'])->name('admin.users');
     Route::get('/admin/orders', [AdminDashboardController::class, 'orders'])->name('admin.orders');
     Route::get('/admin/products', [ProductController::class, 'index'])->name('admin.products');
@@ -37,6 +37,7 @@ Route::middleware('auth', 'role:admin', 'throttle:30,1')->group(function () {
     Route::put('/admin/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
     Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs');
 });
 
 // Auth + user
