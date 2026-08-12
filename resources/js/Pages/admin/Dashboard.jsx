@@ -1,12 +1,28 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import AdminLayout from "@/Components/component/admin-page-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/Components/ui/card";
 import { formatRupiah } from "@/lib/format";
 // UPDATE IMPORTS: Gunakan icon yang lebih tegas & Import component baru
-import { ShoppingBag, CircleDollarSign, UsersRound, PackageSearch, TrendingUp } from "lucide-react";
-import ModernStatsCard from "./components/ModernStatsCard"; // Pastikan path import benar
+import { ShoppingBag, CircleDollarSign, UsersRound, PackageSearch, TrendingUp, BarChart2 } from "lucide-react";
+import ModernStatsCard from "./components/ModernStatsCard"; 
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 
-export default function Dashboard({ usersCount, productCount, orderCount, totalPenjualan, topSelling }) {
+export default function Dashboard({ 
+    usersCount, usersDelta, 
+    productCount, productDelta, 
+    orderCount, ordersDelta, 
+    totalPenjualan, salesDelta, 
+    topSelling 
+}) {
+    const [analytics, setAnalytics] = useState(null);
+
+    useEffect(() => {
+        fetch('/admin/analytics')
+            .then(res => res.json())
+            .then(data => setAnalytics(data))
+            .catch(err => console.error("Failed to fetch analytics", err));
+    }, []);
+
     return (
         <AdminLayout>
             <div className="space-y-8 relative">
@@ -30,38 +46,85 @@ export default function Dashboard({ usersCount, productCount, orderCount, totalP
                         title="Total Pendapatan" 
                         value={formatRupiah(totalPenjualan)} 
                         icon={<CircleDollarSign />} 
-                        desc="+20.1%"
-                        trend="up"
+                        desc={salesDelta > 0 ? `+${salesDelta}%` : `${salesDelta}%`}
+                        trend={salesDelta >= 0 ? "up" : "down"}
                     />
                     <ModernStatsCard 
                         title="Pesanan Baru" 
                         value={orderCount} 
                         icon={<ShoppingBag />} 
-                        desc="+12 Order"
-                        trend="up"
+                        desc={ordersDelta > 0 ? `+${ordersDelta}%` : `${ordersDelta}%`}
+                        trend={ordersDelta >= 0 ? "up" : "down"}
                     />
                     <ModernStatsCard 
                         title="Total Pelanggan" 
                         value={usersCount} 
                         icon={<UsersRound />} 
-                        desc="+5 User"
-                        trend="up"
+                        desc={usersDelta > 0 ? `+${usersDelta}%` : `${usersDelta}%`}
+                        trend={usersDelta >= 0 ? "up" : "down"}
                     />
                     <ModernStatsCard 
-                        title="Stok Produk" 
+                        title="Produk Baru" 
                         value={productCount} 
                         icon={<PackageSearch />} 
-                        desc="Item Aktif"
-                        trend="neutral" // Bisa disesuaikan logikanya nanti
+                        desc={productDelta > 0 ? `+${productDelta}%` : `${productDelta}%`}
+                        trend={productDelta >= 0 ? "up" : "down"}
                     />
                 </div>
                 {/* ---------------------------------- */}
 
+                {/* Analytics Charts */}
+                {analytics && (
+                    <div className="grid gap-6 lg:grid-cols-2 pt-4">
+                        <Card className="shadow-lg border-0 ring-1 ring-gray-100">
+                            <CardHeader className="border-b border-gray-50 bg-gray-50/50 px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-batik-gold" />
+                                    <CardTitle className="font-serif text-gray-900">Penjualan 7 Hari Terakhir</CardTitle>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={analytics.sales} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis dataKey="date" tick={{fontSize: 12}} />
+                                            <YAxis tickFormatter={(val) => `Rp ${val / 1000}k`} tick={{fontSize: 12}} />
+                                            <Tooltip formatter={(value) => formatRupiah(value)} />
+                                            <Line type="monotone" dataKey="total" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-lg border-0 ring-1 ring-gray-100">
+                            <CardHeader className="border-b border-gray-50 bg-gray-50/50 px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                    <BarChart2 className="w-5 h-5 text-batik-gold" />
+                                    <CardTitle className="font-serif text-gray-900">Top Kategori Produk</CardTitle>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <div className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={analytics.categories} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                            <XAxis type="number" />
+                                            <YAxis dataKey="category" type="category" width={100} tick={{fontSize: 12}} />
+                                            <Tooltip />
+                                            <Bar dataKey="total_sold" name="Terjual" fill="#1e3a8a" radius={[0, 4, 4, 0]} barSize={30} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 {/* Top Selling Table & Target (Sisa kode lama di bawah ini tetap sama) */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 pt-4">
-                    {/* ... (Table Produk Terlaris Anda yang lama letakkan di sini) ... */}
-                     <Card className="col-span-4 shadow-lg border-0 ring-1 ring-gray-100">
+                <div className="pt-4">
+                     <Card className="shadow-lg border-0 ring-1 ring-gray-100">
                         <CardHeader className="border-b border-gray-50 bg-gray-50/50 px-6 py-4">
                             <div className="flex items-center gap-2">
                                 <TrendingUp className="w-5 h-5 text-batik-gold" />
@@ -105,25 +168,6 @@ export default function Dashboard({ usersCount, productCount, orderCount, totalP
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Target Placeholder (Yang lama, sedikit diperbaiki style-nya) */}
-                    <Card className="col-span-3 shadow-lg border-0 bg-gradient-to-br from-batik-900 to-batik-800 text-white overflow-hidden relative">
-                         {/* Background pattern */}
-                         <div className="absolute inset-0 opacity-10 bg-kawung pointer-events-none"></div>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3 text-xl font-serif">
-                                Target Bulan Ini
-                            </CardTitle>
-                            <CardDescription className="text-batik-200">Progres pencapaian omzet.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center justify-center py-12 relative z-10">
-                            <div className="text-6xl font-serif font-bold text-batik-gold mb-3 drop-shadow-md">2%</div>
-                            <p className="text-base text-batik-100 mb-6">Rp 200.000.000 lagi menuju target!</p>
-                            <div className="w-full bg-black/30 h-4 rounded-full overflow-hidden p-0.5 border border-white/10">
-                                <div className="bg-gradient-to-r from-batik-gold to-yellow-400 h-full rounded-full shadow-[0_0_10px_rgba(212,175,55,0.5)]" style={{width: '2%'}}></div>
                             </div>
                         </CardContent>
                     </Card>

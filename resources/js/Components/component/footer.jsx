@@ -20,7 +20,7 @@ To read more about using these font, please visit the Next.js documentation:
 
 import { Input } from "@/Components/ui/input";
 import { Button } from "@/Components/ui/button";
-import { Link } from "@nextui-org/react";
+import { Link } from "@inertiajs/react";
 
 export function Footer({ isFixed = false }) {
     const footerClass = isFixed

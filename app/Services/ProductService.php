@@ -47,6 +47,7 @@ class ProductService
                 'name' => $request->name,
                 'harga' => $request->harga,
                 'description' => $request->description,
+                'category' => $request->category,
             ]);
 
             $this->syncSizes($product, $request->input('sizes'));
@@ -65,6 +66,7 @@ class ProductService
                 'name' => $request->name,
                 'harga' => $request->harga,
                 'description' => $request->description,
+                'category' => $request->category,
             ]);
 
             $product->sizes()->delete();
@@ -81,7 +83,6 @@ class ProductService
     {
         return DB::transaction(function () use ($id) {
             $product = $this->productRepository->findWithRelations($id, ['images']);
-            $this->imageService->delete(null);
 
             foreach ($product->images as $image) {
                 $this->imageService->delete($image->image_path);

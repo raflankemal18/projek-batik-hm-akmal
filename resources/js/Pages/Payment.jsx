@@ -5,6 +5,7 @@ import { formatRupiah } from "@/lib/format";
 import { Button } from "@/Components/ui/button";
 import { CheckCircle, Clock, AlertTriangle, XCircle, History, Package } from "lucide-react";
 import { toast } from "sonner";
+import Pagination from "@/Components/Pagination";
 
 export default function Payment({ payments }) {
     const paymentsList = payments?.data || payments || [];
@@ -134,13 +135,25 @@ export default function Payment({ payments }) {
                                     
                                     <div className="flex flex-row md:flex-col justify-between items-center md:items-end border-t md:border-t-0 pt-3 md:pt-0 mt-2 md:mt-0">
                                         <p className="font-serif font-bold text-batik-900 text-lg">{formatRupiah(p.total_harga)}</p>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                                            p.status === 'success' 
-                                            ? 'bg-green-100 text-green-700' 
-                                            : 'bg-red-100 text-red-700'
-                                        }`}>
-                                            {p.status === 'success' ? 'LUNAS / DIPROSES' : 'BATAL / GAGAL'}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-2">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                                                p.status === 'success' 
+                                                ? 'bg-green-100 text-green-700' 
+                                                : 'bg-red-100 text-red-700'
+                                            }`}>
+                                                {p.status === 'success' ? 'LUNAS / DIPROSES' : 'BATAL / GAGAL'}
+                                            </span>
+                                            {p.status === 'success' && p.order?.fulfillment_status && (
+                                                <div className="text-xs font-bold text-batik-900 bg-batik-100 px-2 py-1 rounded-md mt-1 border border-batik-200">
+                                                    Status: {p.order.fulfillment_status === 'processing' ? 'Diproses' : p.order.fulfillment_status === 'shipped' ? 'Dikirim' : 'Diterima'}
+                                                </div>
+                                            )}
+                                            {p.status === 'success' && (
+                                                <a href={`/payments/${p.id}/invoice`} target="_blank" rel="noopener noreferrer" className="text-xs text-batik-900 font-bold hover:underline">
+                                                    Cetak Invoice
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -148,6 +161,12 @@ export default function Payment({ payments }) {
                     ) : (
                         <div className="text-center py-12 bg-gray-50 rounded-xl border-dashed border-2 border-gray-200">
                             <p className="text-gray-400">Belum ada riwayat transaksi.</p>
+                        </div>
+                    )}
+                    
+                    {payments.links && payments.links.length > 3 && (
+                        <div className="flex justify-center mt-6">
+                            <Pagination links={payments.links} />
                         </div>
                     )}
                 </div>

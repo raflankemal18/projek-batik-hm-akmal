@@ -96,11 +96,18 @@ export default function Keranjang({ keranjangs }) {
                             <p className="text-gray-500 mb-8 max-w-md mx-auto px-4">
                                 Sepertinya Anda belum menemukan batik yang cocok. Mari temukan gaya etnik terbaikmu hari ini.
                             </p>
-                            <Link href="/products">
-                                <Button className="bg-batik-900 hover:bg-batik-800 text-white px-8 h-12 rounded-full text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-                                    Mulai Belanja
-                                </Button>
-                            </Link>
+                            <div className="flex justify-center gap-4">
+                                <Link href="/products">
+                                    <Button className="bg-batik-900 hover:bg-batik-800 text-white px-8 h-12 rounded-full text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                                        Mulai Belanja
+                                    </Button>
+                                </Link>
+                                <Link href="/pembayaran">
+                                    <Button variant="outline" className="border-batik-gold text-batik-900 hover:bg-batik-gold hover:text-white px-8 h-12 rounded-full text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                                        Riwayat Pesanan
+                                    </Button>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -114,9 +121,16 @@ export default function Keranjang({ keranjangs }) {
             <Head title="Keranjang Belanja - BatikNesia" />
             
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-                <div className="flex items-end justify-between border-b border-batik-200 pb-4 mb-8">
-                    <h1 className="text-3xl font-serif font-bold text-batik-900">Keranjang Belanja</h1>
-                    <span className="text-batik-500 font-medium">{items.length} Item</span>
+                <div className="flex items-center justify-between border-b border-batik-200 pb-4 mb-8">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-3xl font-serif font-bold text-batik-900">Keranjang Belanja</h1>
+                        <span className="text-batik-500 font-medium hidden sm:inline-block">({items.length} Item)</span>
+                    </div>
+                    <Link href="/pembayaran">
+                        <Button variant="outline" className="border-batik-gold text-batik-900 hover:bg-batik-gold hover:text-white transition-colors h-10 rounded-full px-6">
+                            Riwayat Pesanan
+                        </Button>
+                    </Link>
                 </div>
 
                 <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">

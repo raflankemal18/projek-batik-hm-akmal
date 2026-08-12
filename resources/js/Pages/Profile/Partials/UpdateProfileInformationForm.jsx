@@ -22,20 +22,20 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
+                <h2 className="text-xl font-serif font-bold text-batik-900">Informasi Profil</h2>
 
-                <p className="mt-1 text-sm text-gray-600">
-                    Update your account's profile information and email address.
+                <p className="mt-1 text-sm text-gray-500">
+                    Perbarui informasi profil dan alamat email akun Anda.
                 </p>
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                    <InputLabel htmlFor="name" value="Nama Lengkap" />
 
                     <TextInput
                         id="name"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full focus:border-batik-gold focus:ring-batik-gold"
                         value={data.name}
                         onChange={(e) => setData('name', e.target.value)}
                         required
@@ -47,12 +47,12 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value="Alamat Email" />
 
                     <TextInput
                         id="email"
                         type="email"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full focus:border-batik-gold focus:ring-batik-gold"
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
                         required
@@ -65,27 +65,32 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>
                         <p className="text-sm mt-2 text-gray-800">
-                            Your email address is unverified.
+                            Alamat email Anda belum terverifikasi.
                             <Link
                                 href={route('verification.send')}
                                 method="post"
                                 as="button"
-                                className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                className="underline text-sm text-batik-600 hover:text-batik-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-batik-gold ml-1"
                             >
-                                Click here to re-send the verification email.
+                                Klik di sini untuk mengirim ulang email verifikasi.
                             </Link>
                         </p>
 
                         {status === 'verification-link-sent' && (
                             <div className="mt-2 font-medium text-sm text-green-600">
-                                A new verification link has been sent to your email address.
+                                Link verifikasi baru telah dikirim ke alamat email Anda.
                             </div>
                         )}
                     </div>
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton 
+                        disabled={processing}
+                        className="bg-batik-900 hover:bg-batik-800 text-white px-6 py-2.5 rounded-md"
+                    >
+                        Simpan
+                    </PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -94,7 +99,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">Saved.</p>
+                        <p className="text-sm text-batik-gold font-medium">Berhasil disimpan.</p>
                     </Transition>
                 </div>
             </form>

@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { router, Link, usePage } from "@inertiajs/react"; // Tambahkan usePage
+import { router, Link, usePage } from "@inertiajs/react"; 
 import { formatRupiah } from "@/lib/format";
 import { storageUrl } from "@/lib/image";
 import FallbackImage from "@/Components/ui/FallbackImage";
-import { Star, Truck, ShieldCheck, Ruler, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Star, Truck, ShieldCheck, Ruler, Minus, Plus, ShoppingBag, Heart } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { toast } from "sonner";
 
 export default function ModernDetail({ product }) {
     // 1. AMBIL DATA USER DARI USEPAGE
-    const { auth } = usePage().props;
+    const { auth, wishlistIds } = usePage().props;
     // 2. DEFINISIKAN isAdmin
     const isAdmin = auth?.user?.role === 'admin';
 
@@ -40,6 +40,17 @@ export default function ModernDetail({ product }) {
         }, {
             preserveScroll: true,
             onSuccess: () => toast.success("Berhasil ditambahkan ke keranjang!")
+        });
+    };
+
+    const toggleWishlist = () => {
+        router.post("/wishlist/toggle", {
+            product_id: product.id
+        }, {
+            preserveScroll: true,
+            onError: () => {
+                toast.error("Gagal memperbarui wishlist. Silakan login sebagai user.");
+            }
         });
     };
 
@@ -162,13 +173,27 @@ export default function ModernDetail({ product }) {
                                     Mode Admin (View Only)
                                 </Button>
                             ) : (
-                                <Button 
-                                    onClick={handleAddToCart}
-                                    size="lg" 
-                                    className="flex-1 rounded-full bg-batik-gold hover:bg-yellow-600 text-black font-bold text-lg h-12"
-                                >
-                                    <ShoppingBag className="w-5 h-5 mr-2" /> Masukkan Keranjang
-                                </Button>
+                                <>
+                                    <Button 
+                                        onClick={handleAddToCart}
+                                        size="lg" 
+                                        className="flex-1 rounded-full bg-batik-gold hover:bg-yellow-600 text-black font-bold text-lg h-12"
+                                    >
+                                        <ShoppingBag className="w-5 h-5 mr-2" /> Masukkan Keranjang
+                                    </Button>
+                                    <Button
+                                        onClick={toggleWishlist}
+                                        size="icon"
+                                        variant="outline"
+                                        className={`w-12 h-12 rounded-full border-gray-300 transition-colors ${
+                                            wishlistIds?.includes(product.id)
+                                                ? 'text-red-500 border-red-500'
+                                                : 'text-gray-400 hover:text-red-500 hover:border-red-500'
+                                        }`}
+                                    >
+                                        <Heart className={`w-5 h-5 ${wishlistIds?.includes(product.id) ? 'fill-current' : ''}`} />
+                                    </Button>
+                                </>
                             )}
                         </div>
 

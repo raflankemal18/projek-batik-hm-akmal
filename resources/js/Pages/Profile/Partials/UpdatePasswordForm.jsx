@@ -39,16 +39,16 @@ export default function UpdatePasswordForm({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">Update Password</h2>
+                <h2 className="text-xl font-serif font-bold text-batik-900">Perbarui Kata Sandi</h2>
 
-                <p className="mt-1 text-sm text-gray-600">
-                    Ensure your account is using a long, random password to stay secure.
+                <p className="mt-1 text-sm text-gray-500">
+                    Pastikan akun Anda menggunakan kata sandi yang panjang dan acak agar tetap aman.
                 </p>
             </header>
 
             <form onSubmit={updatePassword} className="mt-6 space-y-6">
                 <div>
-                    <InputLabel htmlFor="current_password" value="Current Password" />
+                    <InputLabel htmlFor="current_password" value="Kata Sandi Saat Ini" />
 
                     <TextInput
                         id="current_password"
@@ -56,7 +56,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         value={data.current_password}
                         onChange={(e) => setData('current_password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full focus:border-batik-gold focus:ring-batik-gold"
                         autoComplete="current-password"
                     />
 
@@ -64,7 +64,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="password" value="New Password" />
+                    <InputLabel htmlFor="password" value="Kata Sandi Baru" />
 
                     <TextInput
                         id="password"
@@ -72,7 +72,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full focus:border-batik-gold focus:ring-batik-gold"
                         autoComplete="new-password"
                     />
 
@@ -80,14 +80,14 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="password_confirmation" value="Confirm Password" />
+                    <InputLabel htmlFor="password_confirmation" value="Konfirmasi Kata Sandi" />
 
                     <TextInput
                         id="password_confirmation"
                         value={data.password_confirmation}
                         onChange={(e) => setData('password_confirmation', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full focus:border-batik-gold focus:ring-batik-gold"
                         autoComplete="new-password"
                     />
 
@@ -95,7 +95,12 @@ export default function UpdatePasswordForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save</PrimaryButton>
+                    <PrimaryButton 
+                        disabled={processing}
+                        className="bg-batik-900 hover:bg-batik-800 text-white px-6 py-2.5 rounded-md"
+                    >
+                        Simpan
+                    </PrimaryButton>
 
                     <Transition
                         show={recentlySuccessful}
@@ -104,7 +109,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">Saved.</p>
+                        <p className="text-sm text-batik-gold font-medium">Berhasil disimpan.</p>
                     </Transition>
                 </div>
             </form>

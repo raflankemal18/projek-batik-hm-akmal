@@ -15,7 +15,7 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $payments = Payment::with(['paymentDetails.product', 'user'])
+        $payments = Payment::with(['paymentDetails.product', 'user', 'order'])
             ->where('user_id', auth()->id())
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -93,5 +93,19 @@ class PaymentController extends Controller
         $webhookService->handle($request->all());
 
         return response()->json(['status' => 'ok']);
+    }
+
+    public function invoice(Payment $payment)
+    {
+        if (auth()->user()->role !== 'admin' && $payment->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($payment->status !== 'success') {
+            abort(404, 'Invoice only available for paid payments');
+        }
+
+        $payment->load(['user', 'order.details.product']);
+        return Inertia::render('Invoice', ['payment' => $payment]);
     }
 }

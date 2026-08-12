@@ -13,6 +13,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
         name: "",
         harga: "",
         description: "",
+        category: "",
         sizes: [{ size: "S", stock: 10 }],
         images: []
     });
@@ -25,6 +26,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                 name: product.name || "",
                 harga: product.harga || "",
                 description: product.description || "",
+                category: product.category || "",
                 sizes: product.sizes.length > 0 ? product.sizes : [{ size: "S", stock: 0 }],
                 images: [] // Reset gambar baru
             });
@@ -34,6 +36,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                 name: "",
                 harga: "",
                 description: "",
+                category: "",
                 sizes: [{ size: "S", stock: 10 }],
                 images: []
             });
@@ -67,6 +70,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
         formData.append("name", data.name);
         formData.append("harga", data.harga);
         formData.append("description", data.description);
+        formData.append("category", data.category);
         
         // Stringify sizes array agar bisa dikirim lewat FormData
         data.sizes.forEach((s) => formData.append("sizes[]", JSON.stringify(s)));
@@ -123,6 +127,15 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                         <div className="col-span-2">
                             <label className="block text-sm font-medium mb-1">Deskripsi</label>
                             <textarea id="description" value={data.description} onChange={handleChange} rows="3" className="w-full p-2 border rounded-md focus:ring-batik-gold" />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium mb-1">Kategori</label>
+                            <select id="category" value={data.category} onChange={handleChange} required className="w-full p-2 border rounded-md focus:ring-batik-gold bg-white">
+                                <option value="">( — )</option>
+                                <option value="pria">pria</option>
+                                <option value="wanita">wanita</option>
+                                <option value="sarimbit">sarimbit</option>
+                            </select>
                         </div>
                     </div>
 

@@ -20,6 +20,7 @@ class AddProductRequest extends FormRequest
             'name' => 'required|string|max:25',
             'harga' => 'required|numeric',
             'description' => 'nullable|string',
+            'category' => 'nullable|string|in:pria,wanita,sarimbit',
             'sizes' => 'required|array',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpg,jpeg,png,gif|max:2048',

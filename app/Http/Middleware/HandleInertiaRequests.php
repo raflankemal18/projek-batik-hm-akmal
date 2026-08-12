@@ -34,9 +34,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            // 'user' => [
-            //     'name' => auth()->user->name,
-            // ],
+            'cartCount' => $request->user() ? \App\Models\CartDetail::whereHas('cart', fn($q) => $q->where('user_id', $request->user()->id))->sum('quantity') : 0,
+            'wishlistIds' => $request->user() ? \App\Models\Wishlist::where('user_id', $request->user()->id)->pluck('product_id')->toArray() : [],
         ];
     }
 }

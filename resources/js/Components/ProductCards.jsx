@@ -1,16 +1,16 @@
 import React from "react";
-import { Link, router, usePage } from "@inertiajs/react"; // Tambahkan usePage
+import { Link, router, usePage } from "@inertiajs/react";
 import { formatRupiah } from "@/lib/format";
 import FallbackImage from "@/Components/ui/FallbackImage";
 import { motion } from "framer-motion";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart, Eye, Heart } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
 import { toast } from "sonner";
 
 export default function ProductCards({ products }) {
     // 1. AMBIL DATA AUTH UNTUK CEK ADMIN
-    const { auth } = usePage().props;
+    const { auth, wishlistIds } = usePage().props;
     const isAdmin = auth?.user?.role === 'admin';
     
     const addToCart = (e, product) => {
@@ -27,6 +27,18 @@ export default function ProductCards({ products }) {
             },
             onError: () => {
                 toast.error("Gagal menambahkan ke keranjang. Silakan login sebagai user.");
+            }
+        });
+    };
+
+    const toggleWishlist = (e, product) => {
+        e.preventDefault();
+        router.post("/wishlist/toggle", {
+            product_id: product.id
+        }, {
+            preserveScroll: true,
+            onError: () => {
+                toast.error("Gagal memperbarui wishlist. Silakan login sebagai user.");
             }
         });
     };
@@ -64,27 +76,34 @@ export default function ProductCards({ products }) {
                             
                             {/* LOGIKA: Sembunyikan Tombol Cart Jika Admin */}
                             {!isAdmin && (
-                                <Button 
-                                    size="icon" 
-                                    variant="secondary" 
-                                    className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg"
-                                    onClick={(e) => addToCart(e, product)}
-                                    title="Add to Cart"
-                                >
-                                    <ShoppingCart className="w-4 h-4" />
-                                </Button>
+                                <>
+                                    <Button 
+                                        size="icon" 
+                                        variant="secondary" 
+                                        className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg"
+                                        onClick={(e) => addToCart(e, product)}
+                                        title="Add to Cart"
+                                    >
+                                        <ShoppingCart className="w-4 h-4" />
+                                    </Button>
+                                    
+                                    <Button 
+                                        size="icon" 
+                                        variant="secondary" 
+                                        className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg"
+                                        onClick={(e) => toggleWishlist(e, product)}
+                                        title="Toggle Wishlist"
+                                    >
+                                        <Heart 
+                                            className={`w-4 h-4 transition-colors ${
+                                                wishlistIds?.includes(product.id) 
+                                                    ? 'text-red-500 fill-current' 
+                                                    : 'text-gray-400 hover:text-red-500'
+                                            }`} 
+                                        />
+                                    </Button>
+                                </>
                             )}
-
-                            <Link href={`/products/${product.id}`}>
-                                <Button 
-                                    size="icon" 
-                                    variant="secondary" 
-                                    className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg"
-                                    title="View Detail"
-                                >
-                                    <Eye className="w-4 h-4" />
-                                </Button>
-                            </Link>
                         </div>
                     </div>
 

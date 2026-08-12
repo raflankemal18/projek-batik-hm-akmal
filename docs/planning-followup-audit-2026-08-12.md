@@ -187,16 +187,18 @@ Eksekusi per fitur, **masing-masing butuh mini-spec tersendiri yang dikonfirmasi
 
 ## Checklist Master
 
-- [ ] **Tahap 0** — uninstall deps mati, hapus import Chakra, footer Link, hapus angka palsu dashboard, field kategori form, fix mobile nav, hapus `delete(null)`.
-- [ ] **Tahap 0** — test 49/49 + build + smoke.
-- [ ] **Tahap 1** — migration + model + AuditLogService + sanitizer + afterCommit.
-- [ ] **Tahap 1** — hooks user, admin, transaksi.
-- [ ] **Tahap 1** — /admin/logs + Logs.jsx + policy + route + sidebar.
-- [ ] **Tahap 1** — logs:cleanup + scheduler.
-- [ ] **Tahap 1** — 8 test D4 §8 + test lama hijau.
-- [ ] **Tahap 2** — invoice wire, fulfillment, pagination Payment, cart badge, user dashboard.
-- [ ] **Tahap 3** — per fitur dengan mini-spec terkonfirmasi.
-- [ ] **Tahap 4** — analytics + data dashboard asli.
+- [x] **Tahap 0** — uninstall deps mati, hapus import Chakra, footer Link, hapus angka palsu dashboard, field kategori form, fix mobile nav, hapus `delete(null)`.
+- [x] **Tahap 0** — test 49/49 + build + smoke.
+- [x] **Tahap 1** — migration + model + AuditLogService + sanitizer + afterCommit.
+- [x] **Tahap 1** — hooks user, admin, transaksi.
+- [x] **Tahap 1** — /admin/logs + Logs.jsx + policy + route + sidebar.
+- [x] **Tahap 1** — logs:cleanup + scheduler.
+- [x] **Tahap 1** — 8 test D4 §8 + test lama hijau.
+- [x] **Tahap 2** — invoice wire, fulfillment, pagination Payment, cart badge, (user dashboard dihapus sesuai request user).
+- [x] **Tahap 3** — Wishlist (schema, tombol heart aktif, badge navbar, halaman `/wishlist`).
+- [x] **UI/UX Tambahan** — Refactor Profile Edit & ForgotPassword sesuai tema BatikNesia, ubah tombol logout menjadi Dropdown Profile modern.
+- [ ] **Tahap 3** — Sisa fitur Tahap 3 (per fitur dengan mini-spec terkonfirmasi).
+- [x] **Tahap 4** — analytics + data dashboard asli (deltas & recharts).
 
 ---
 

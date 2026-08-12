@@ -1,6 +1,7 @@
 import { Link, usePage, router } from "@inertiajs/react";
 import React, { useState } from "react";
-import { ShoppingBag, Menu, X, LayoutDashboard } from "lucide-react";
+import Dropdown from "@/Components/Dropdown";
+import { ShoppingBag, Menu, X, LayoutDashboard, Heart, UserCircle } from "lucide-react";
 
 export default function Header() {
     const { auth } = usePage().props;
@@ -47,9 +48,7 @@ const isUser = auth.user?.role === 'user';
                         <div className="ml-10 flex items-baseline space-x-8">
                             <NavLink href="/" active={route().current('home')}>Beranda</NavLink>
                             <NavLink href="/products" active={route().current('products')}>Koleksi</NavLink>
-                            <NavLink href="/about">Tentang Kami</NavLink>
-                    {isUser && (
-                            <NavLink href="/pembayaran" active={route().current('pembayaran')}>pesanan saya</NavLink>)}
+                            <NavLink href="/about" active={route().current('about')}>Tentang Kami</NavLink>
                         </div>
                     </div>
 
@@ -58,9 +57,24 @@ const isUser = auth.user?.role === 'user';
                         
                         {/* ICON KERANJANG (Hanya muncul jika BUKAN Admin) */}
                         {!isAdmin && (
-                            <Link href="/cart" className="text-batik-100 hover:text-batik-gold transition-colors relative">
-                                <ShoppingBag className="w-6 h-6" />
-                            </Link>
+                            <>
+                                <Link href="/wishlist" className="text-batik-100 hover:text-batik-gold transition-colors relative">
+                                    <Heart className="w-6 h-6" />
+                                    {usePage().props.wishlistIds?.length > 0 && (
+                                        <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                            {usePage().props.wishlistIds.length}
+                                        </span>
+                                    )}
+                                </Link>
+                                <Link href="/cart" className="text-batik-100 hover:text-batik-gold transition-colors relative">
+                                    <ShoppingBag className="w-6 h-6" />
+                                    {usePage().props.cartCount > 0 && (
+                                        <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                            {usePage().props.cartCount}
+                                        </span>
+                                    )}
+                                </Link>
+                            </>
                         )}
 
                         {/* TOMBOL DASHBOARD (Hanya muncul jika ADMIN) */}
@@ -76,14 +90,28 @@ const isUser = auth.user?.role === 'user';
                                 Masuk
                             </Link>
                         ) : (
-                            <div className="flex items-center gap-4">
-                                <span className="text-batik-200 text-sm font-serif italic">Halo, {auth.user.name}</span>
-                                <button 
-                                    onClick={handleLogout} 
-                                    className="text-sm text-red-400 hover:text-red-300 transition-colors uppercase tracking-wider font-medium"
-                                >
-                                    Keluar
-                                </button>
+                            <div className="relative">
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <button className="flex items-center gap-2 hover:bg-white/5 px-2 py-1.5 rounded-full transition-colors group">
+                                            <div className="w-8 h-8 rounded-full bg-batik-gold text-batik-900 flex items-center justify-center font-bold text-sm">
+                                                {auth.user.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <span className="text-sm font-medium text-batik-50 group-hover:text-batik-gold transition-colors hidden lg:block">
+                                                {auth.user.name}
+                                            </span>
+                                        </button>
+                                    </Dropdown.Trigger>
+                                    <Dropdown.Content align="right">
+                                        <Dropdown.Link href={route("profile.edit")}>Profil Saya</Dropdown.Link>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="block w-full px-4 py-2 text-start text-sm leading-5 text-red-600 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out"
+                                        >
+                                            Keluar
+                                        </button>
+                                    </Dropdown.Content>
+                                </Dropdown>
                             </div>
                         )}
                     </div>
@@ -103,11 +131,11 @@ const isUser = auth.user?.role === 'user';
                     <div className="px-4 pt-2 pb-6 space-y-2">
                         <MobileNavLink href="/">Beranda</MobileNavLink>
                         <MobileNavLink href="/products">Koleksi</MobileNavLink>
-                        <MobileNavLink href="/pembayaran">pesanan saya</MobileNavLink>
-                        
-                        
                         {!isAdmin && (
-                            <MobileNavLink href="/cart">Keranjang</MobileNavLink>
+                            <>
+                                <MobileNavLink href="/wishlist">Wishlist</MobileNavLink>
+                                <MobileNavLink href="/cart">Keranjang</MobileNavLink>
+                            </>
                         )}
 
                         {isAdmin && (
@@ -120,12 +148,15 @@ const isUser = auth.user?.role === 'user';
                             {!auth.user ? (
                                 <MobileNavLink href={route("login")}>Masuk / Daftar</MobileNavLink>
                             ) : (
-                                <button 
-                                    onClick={handleLogout} 
-                                    className="block w-full text-left px-3 py-2 text-red-400 font-medium hover:bg-white/5 rounded-md"
-                                >
-                                    KELUAR
-                                </button>
+                                <>
+                                    <MobileNavLink href={route("profile.edit")}>Profil Saya</MobileNavLink>
+                                    <button 
+                                        onClick={handleLogout} 
+                                        className="block w-full text-left px-3 py-3 text-red-400 font-medium hover:bg-white/5 rounded-md"
+                                    >
+                                        Keluar
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>

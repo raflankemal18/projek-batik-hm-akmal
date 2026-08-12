@@ -1,11 +1,13 @@
 import React from "react";
+import { router } from "@inertiajs/react";
 import AdminLayout from "@/Components/component/admin-page-layout";
 import TableToolbar from "@/Components/ui/TableToolbar";
 import Pagination from "@/Components/Pagination";
 import useTableFilters from "@/hooks/useTableFilters";
 import { formatRupiah } from "@/lib/format";
 import { Badge } from "@/Components/ui/badge";
-import { Calendar, User, Phone, MapPin } from "lucide-react";
+import { Calendar, User, Phone, MapPin, Truck } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Order({ payments }) {
     const list = payments?.data || payments || [];
@@ -97,6 +99,9 @@ export default function Order({ payments }) {
                                             <div className="flex flex-col gap-2">
                                                 <div className="font-bold text-gray-900">{formatRupiah(payment.total_harga)}</div>
                                                 <StatusBadge status={payment.status} />
+                                                {payment.status === 'success' && payment.order && (
+                                                    <FulfillmentSelect order={payment.order} />
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-xs text-gray-500">
@@ -145,5 +150,37 @@ function StatusBadge({ status }) {
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.pending} text-center w-fit`}>
             {labels[status] || status}
         </span>
+    );
+}
+
+function FulfillmentSelect({ order }) {
+    if (!order) return null;
+    
+    const handleUpdate = (e) => {
+        const val = e.target.value;
+        if (!val) return;
+        
+        router.patch(`/admin/orders/${order.id}/fulfillment`, {
+            fulfillment_status: val
+        }, {
+            preserveScroll: true,
+            onSuccess: () => toast.success("Status pengiriman diperbarui")
+        });
+    };
+
+    return (
+        <div className="flex items-center gap-2 mt-2">
+            <Truck className="w-4 h-4 text-gray-500" />
+            <select 
+                className="text-xs border-gray-200 rounded py-1 pl-2 pr-6 bg-gray-50 text-gray-700 w-full cursor-pointer focus:ring-batik-gold focus:border-batik-gold"
+                value={order.fulfillment_status || ""}
+                onChange={handleUpdate}
+            >
+                <option value="" disabled>Pilih Status...</option>
+                <option value="processing">Diproses</option>
+                <option value="shipped">Dikirim</option>
+                <option value="delivered">Diterima</option>
+            </select>
+        </div>
     );
 }
