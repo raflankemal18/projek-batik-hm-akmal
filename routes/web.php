@@ -12,10 +12,13 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\SearchController;
+
 // Public
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/products', [HomeController::class, 'products'])->name('products');
 Route::get('/products/{id}', [HomeController::class, 'show'])->name('products.show');
+Route::get('/search', [SearchController::class, 'index'])->name('search');
 Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::post('/midtrans/webhook', [PaymentController::class, 'webhook'])->middleware('throttle:60,1');
 
