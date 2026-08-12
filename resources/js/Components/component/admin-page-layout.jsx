@@ -69,7 +69,11 @@ export default function AdminLayout({ children }) {
                 {/* Toggle Button */}
                 <div className={`flex items-center pt-4 shrink-0 ${isCollapsed ? 'justify-center' : 'justify-end px-4'}`}>
                     <button 
-                        onClick={() => setIsCollapsed(!isCollapsed)} 
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setIsCollapsed((prev) => !prev);
+                        }} 
                         className="bg-white/5 hover:bg-white/20 text-white rounded p-1.5 transition-colors border border-white/10"
                         title={isCollapsed ? "Perlebar Sidebar" : "Perkecil Sidebar"}
                     >
