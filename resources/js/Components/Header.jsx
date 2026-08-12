@@ -1,7 +1,7 @@
 import { Link, usePage, router } from "@inertiajs/react";
 import React, { useState } from "react";
 import Dropdown from "@/Components/Dropdown";
-import { ShoppingBag, Menu, X, LayoutDashboard, Heart, UserCircle, Search } from "lucide-react";
+import { ShoppingBag, Menu, X, LayoutDashboard, Heart, UserCircle, Search, Bell } from "lucide-react";
 
 export default function Header() {
     const { auth } = usePage().props;
@@ -21,13 +21,23 @@ const isUser = auth.user?.role === 'user';
         }
     };
 
-    // --- LOGOUT MELALUI SESSION (COOKIE) ---
     const handleLogout = (e) => {
         e.preventDefault();
         
         router.post(route("logout"), {}, {
             onFinish: () => {
                 window.location.reload(); 
+            }
+        });
+    };
+
+    const notifications = usePage().props.notifications || [];
+
+    const handleReadNotification = (id, redirectUrl) => {
+        router.post(route('notifications.mark_as_read', id), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (redirectUrl) router.get(redirectUrl);
             }
         });
     };
@@ -118,7 +128,45 @@ const isUser = auth.user?.role === 'user';
                                 Masuk
                             </Link>
                         ) : (
-                            <div className="relative">
+                            <div className="flex items-center gap-4 relative">
+                                {/* NOTIFICATIONS */}
+                                <Dropdown>
+                                    <Dropdown.Trigger>
+                                        <button className="text-batik-100 hover:text-batik-gold transition-colors relative mt-1">
+                                            <Bell className="w-5 h-5" />
+                                            {notifications.length > 0 && (
+                                                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                                                    {notifications.length}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </Dropdown.Trigger>
+                                    <Dropdown.Content align="right" width="80">
+                                        <div className="px-4 py-2 border-b border-gray-100">
+                                            <h3 className="font-bold text-gray-900 text-sm">Notifikasi</h3>
+                                        </div>
+                                        <div className="max-h-80 overflow-y-auto">
+                                            {notifications.length === 0 ? (
+                                                <div className="px-4 py-6 text-center text-sm text-gray-500">
+                                                    Belum ada notifikasi baru.
+                                                </div>
+                                            ) : notifications.map(notif => (
+                                                <button 
+                                                    key={notif.id}
+                                                    onClick={() => handleReadNotification(notif.id, `/pembayaran`)}
+                                                    className="w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors flex flex-col gap-1"
+                                                >
+                                                    <span className="text-xs font-semibold text-batik-900">{notif.data.message}</span>
+                                                    <span className="text-[10px] text-gray-400">
+                                                        {new Date(notif.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year:'numeric', hour: '2-digit', minute:'2-digit'})}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Dropdown.Content>
+                                </Dropdown>
+
+                                {/* PROFILE */}
                                 <Dropdown>
                                     <Dropdown.Trigger>
                                         <button className="flex items-center gap-2 hover:bg-white/5 px-2 py-1.5 rounded-full transition-colors group">

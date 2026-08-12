@@ -38,6 +38,7 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => $request->user() ? \App\Models\CartDetail::whereHas('cart', fn($q) => $q->where('user_id', $request->user()->id))->sum('quantity') : 0,
             'wishlistIds' => $request->user() ? \App\Models\Wishlist::where('user_id', $request->user()->id)->pluck('product_id')->toArray() : [],
             'pendingOrdersCount' => $isAdmin ? \App\Models\Payment::where('status', 'success')->whereHas('order', fn($q) => $q->where('fulfillment_status', 'processing')->orWhereNull('fulfillment_status'))->count() : 0,
+            'notifications' => $request->user() ? $request->user()->unreadNotifications()->latest()->take(5)->get() : [],
         ];
     }
 }

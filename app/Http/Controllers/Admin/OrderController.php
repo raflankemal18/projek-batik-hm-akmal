@@ -67,9 +67,21 @@ class OrderController extends Controller
             'status' => 'required|in:processing,shipped,delivered'
         ]);
 
-        \App\Models\Order::whereIn('payment_id', $request->ids)->update([
-            'fulfillment_status' => $request->status
-        ]);
+        $orders = \App\Models\Order::whereIn('payment_id', $request->ids)->with('payment.user')->get();
+        foreach ($orders as $order) {
+            $order->update(['fulfillment_status' => $request->status]);
+
+            if ($order->payment && $order->payment->user) {
+                $statusLabel = [
+                    'processing' => 'Diproses',
+                    'shipped' => 'Dikirim',
+                    'delivered' => 'Diterima'
+                ][$request->status] ?? $request->status;
+
+                $msg = "Pesanan #{$order->payment->id} telah diupdate menjadi: {$statusLabel}.";
+                $order->payment->user->notify(new \App\Notifications\OrderStatusUpdated($order, $msg));
+            }
+        }
 
         return redirect()->back()->with('success', 'Status pengiriman terpilih berhasil diperbarui.');
     }

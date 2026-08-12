@@ -171,6 +171,21 @@ class AdminDashboardController extends Controller
 
         \App\Services\AuditLogService::recordAdmin('order.fulfillment_updated', $order, "Fulfillment updated to {$validated['fulfillment_status']}");
 
+        if ($order->payment && $order->payment->user) {
+            $statusLabel = [
+                'processing' => 'Diproses',
+                'shipped' => 'Dikirim',
+                'delivered' => 'Diterima'
+            ][$validated['fulfillment_status']] ?? $validated['fulfillment_status'];
+            
+            $msg = "Pesanan #{$order->payment->id} telah diupdate menjadi: {$statusLabel}.";
+            if ($validated['fulfillment_status'] === 'shipped' && !empty($validated['resi'])) {
+                $msg .= " Resi: {$validated['resi']} ({$validated['kurir']})";
+            }
+            
+            $order->payment->user->notify(new \App\Notifications\OrderStatusUpdated($order, $msg));
+        }
+
         return redirect()->back()->with('success', 'Status pengiriman berhasil diperbarui');
     }
 
