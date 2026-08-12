@@ -1,0 +1,63 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: marketplace-batik-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - marketplace-network
+    volumes:
+      - .:/var/www/html
+      - vendor-data:/var/www/html/vendor
+      - node-modules-data:/var/www/html/node_modules
+      - public-build-data:/var/www/html/public/build
+
+  nginx:
+    image: nginx:alpine
+    container_name: marketplace-batik-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    depends_on:
+      - app
+    networks:
+      - marketplace-network
+    volumes:
+      - .:/var/www/html
+      - public-build-data:/var/www/html/public/build
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    command: sh -c "nginx -g 'daemon off;'"
+
+  db:
+    image: mysql:8.0
+    container_name: marketplace-batik-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: marketplace_batik
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - marketplace-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+networks:
+  marketplace-network:
+    driver: bridge
+
+volumes:
+  db-data:
+  vendor-data:
+  node-modules-data:
+  public-build-data:

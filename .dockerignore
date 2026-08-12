@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+vendor
+
+# Build artifacts
+public/build
+public/hot
+
+# Laravel
+.env
+.env.*
+!.env.example
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+
+# Docker
+Dockerfile
+.dockerignore
+
+# OS files
+__MACOSX
+Archive.zip
+
+# Git
+.git
+.gitignore
+.gitattributes
