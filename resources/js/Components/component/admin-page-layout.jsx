@@ -51,7 +51,7 @@ export default function AdminLayout({ children }) {
         <div className={`grid min-h-screen w-full transition-all duration-300 bg-[#f8f9fa] ${isCollapsed ? 'lg:grid-cols-[80px_1fr]' : 'lg:grid-cols-[280px_1fr]'}`}>
             
             {/* SIDEBAR DESKTOP */}
-            <div className="hidden border-r border-batik-800 bg-batik-900 lg:flex text-batik-100 sticky top-0 h-screen transition-all duration-300 z-40 overflow-hidden flex-col">
+            <div className="hidden border-r border-batik-800 bg-batik-900 lg:flex text-batik-100 sticky top-0 h-screen transition-all duration-300 z-40 relative flex-col">
                 {/* Header Sidebar */}
                 <div className={`flex h-[70px] items-center border-b border-white/10 shrink-0 transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-6 justify-between'}`}>
                     <Link className={`flex items-center gap-2 font-serif font-bold tracking-wide text-white ${isCollapsed ? 'justify-center' : ''}`} href="/">
@@ -66,20 +66,18 @@ export default function AdminLayout({ children }) {
                     </Link>
                 </div>
 
-                {/* Toggle Button */}
-                <div className={`flex items-center pt-4 shrink-0 ${isCollapsed ? 'justify-center' : 'justify-end px-4'}`}>
-                    <button 
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            setIsCollapsed((prev) => !prev);
-                        }} 
-                        className="bg-white/5 hover:bg-white/20 text-white rounded p-1.5 transition-colors border border-white/10"
-                        title={isCollapsed ? "Perlebar Sidebar" : "Perkecil Sidebar"}
-                    >
-                        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                    </button>
-                </div>
+                {/* Toggle Button Absolute */}
+                <button 
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setIsCollapsed((prev) => !prev);
+                    }} 
+                    className="absolute -right-3 top-20 z-50 flex h-6 w-6 items-center justify-center rounded-full bg-batik-gold text-batik-900 shadow-md hover:bg-yellow-400 focus:outline-none transition-transform hover:scale-110"
+                    title={isCollapsed ? "Perlebar Sidebar" : "Perkecil Sidebar"}
+                >
+                    {isCollapsed ? <ChevronRight className="h-4 w-4 ml-0.5" /> : <ChevronLeft className="h-4 w-4 mr-0.5" />}
+                </button>
 
                 {/* Menu Navigasi */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 flex flex-col gap-2">
