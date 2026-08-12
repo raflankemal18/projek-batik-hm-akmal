@@ -157,7 +157,7 @@ Eksekusi per fitur, **masing-masing butuh mini-spec tersendiri yang dikonfirmasi
 | Fitur | Catatan desain yang perlu diputuskan |
 |---|---|
 | Wishlist | Schema `wishlists(user_id, product_id)`; toggle di `ProductDetail`; halaman `/wishlist`. |
-| Review & rating | Schema `reviews`; **moderasi vs auto-publish** (perlu keputusan); rata-rata rating di kartu produk. |
+| ~~Review & rating~~ | (Skip sesuai request user 2026-08-12) Schema `reviews`; moderasi vs auto-publish; rata-rata rating di kartu produk. |
 | Search bar global | Input di navbar → `GET /search?q=` → halaman hasil. |
 | Notifikasi admin order baru | Badge sidebar via polling 30s / Inertia shared prop. |
 | Bulk actions admin | Checkbox multi-select + hapus/ubah massal di `admin/User.jsx`, `admin/Order.jsx`. |

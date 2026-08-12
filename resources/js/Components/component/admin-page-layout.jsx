@@ -54,7 +54,14 @@ export default function AdminLayout({ children }) {
                                 Dashboard Overview
                             </AdminNavLink>
                             <AdminNavLink href="/admin/orders" active={route().current('admin.orders')} icon={<ShoppingBag />}>
-                                Pesanan Masuk
+                                <div className="flex items-center justify-between w-full">
+                                    <span>Pesanan Masuk</span>
+                                    {usePage().props.pendingOrdersCount > 0 && (
+                                        <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                            {usePage().props.pendingOrdersCount}
+                                        </span>
+                                    )}
+                                </div>
                             </AdminNavLink>
                             <AdminNavLink href="/admin/products" active={route().current('admin.products')} icon={<Package />}>
                                 Manajemen Produk
@@ -104,7 +111,16 @@ export default function AdminLayout({ children }) {
                                 </Link>
                                 <nav className="grid gap-2 text-lg font-medium">
                                     <AdminNavLink href="/admin/dashboard" icon={<LayoutDashboard />}>Dashboard</AdminNavLink>
-                                    <AdminNavLink href="/admin/orders" icon={<ShoppingBag />}>Pesanan</AdminNavLink>
+                                    <AdminNavLink href="/admin/orders" icon={<ShoppingBag />}>
+                                        <div className="flex items-center justify-between w-full">
+                                            <span>Pesanan</span>
+                                            {usePage().props.pendingOrdersCount > 0 && (
+                                                <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                    {usePage().props.pendingOrdersCount}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </AdminNavLink>
                                     <AdminNavLink href="/admin/products" icon={<Package />}>Produk</AdminNavLink>
                                     <AdminNavLink href="/admin/users" icon={<Users />}>Pelanggan</AdminNavLink>
                                     <AdminNavLink href="/admin/logs" icon={<ScrollText />}>Log</AdminNavLink>

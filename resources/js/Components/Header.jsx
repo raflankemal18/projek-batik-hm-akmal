@@ -76,8 +76,8 @@ const isUser = auth.user?.role === 'user';
                             </button>
                         </form>
                         
-                        {/* ICON KERANJANG (Hanya muncul jika BUKAN Admin) */}
-                        {!isAdmin && (
+                        {/* ICON KERANJANG & WISHLIST (Hanya muncul jika User login) */}
+                        {isUser && (
                             <>
                                 <Link href="/wishlist" className="text-batik-100 hover:text-batik-gold transition-colors relative">
                                     <Heart className="w-6 h-6" />
@@ -167,7 +167,7 @@ const isUser = auth.user?.role === 'user';
                         </form>
                         <MobileNavLink href="/">Beranda</MobileNavLink>
                         <MobileNavLink href="/products">Koleksi</MobileNavLink>
-                        {!isAdmin && (
+                        {isUser && (
                             <>
                                 <MobileNavLink href="/wishlist">Wishlist</MobileNavLink>
                                 <MobileNavLink href="/cart">Keranjang</MobileNavLink>
