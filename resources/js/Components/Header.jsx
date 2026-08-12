@@ -1,6 +1,6 @@
 import { Link, usePage, router } from "@inertiajs/react";
 import React, { useState } from "react";
-import { ShoppingBag, Menu, X, LayoutDashboard } from "lucide-react";
+import { ShoppingBag, Menu, X, LayoutDashboard, Search } from "lucide-react";
 
 export default function Header() {
     const { auth } = usePage().props;
@@ -11,6 +11,14 @@ const isUser = auth.user?.role === 'user';
 
     const [isClick, setisClick] = useState(false);
     const toggleNavbar = () => setisClick(!isClick);
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.get("/search", { q: searchQuery });
+        }
+    };
 
     // --- LOGOUT MELALUI SESSION (COOKIE) ---
     const handleLogout = (e) => {
@@ -55,6 +63,19 @@ const isUser = auth.user?.role === 'user';
 
                     {/* ICONS & AUTH */}
                     <div className="hidden md:flex items-center gap-6">
+                        {/* SEARCH DESKTOP */}
+                        <form onSubmit={handleSearch} className="relative flex items-center">
+                            <input 
+                                type="text" 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Cari motif..." 
+                                className="bg-white/10 text-batik-50 placeholder-batik-200 border border-white/20 rounded-full px-4 py-1.5 focus:outline-none focus:ring-1 focus:ring-batik-gold text-sm w-48 transition-all"
+                            />
+                            <button type="submit" className="absolute right-3 text-batik-100 hover:text-batik-gold">
+                                <Search className="w-4 h-4" />
+                            </button>
+                        </form>
                         
                         {/* ICON KERANJANG (Hanya muncul jika BUKAN Admin) */}
                         {!isAdmin && (
@@ -101,6 +122,21 @@ const isUser = auth.user?.role === 'user';
             {isClick && (
                 <div className="md:hidden bg-batik-900 border-t border-white/10 animate-accordion-down">
                     <div className="px-4 pt-2 pb-6 space-y-2">
+                        {/* SEARCH MOBILE */}
+                        <form onSubmit={handleSearch} className="py-2">
+                            <div className="relative flex items-center">
+                                <input 
+                                    type="text" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Cari motif..." 
+                                    className="w-full bg-white/10 text-batik-50 placeholder-batik-200 border border-white/20 rounded-md px-4 py-2 focus:outline-none focus:ring-1 focus:ring-batik-gold text-sm"
+                                />
+                                <button type="submit" className="absolute right-3 text-batik-100 hover:text-batik-gold">
+                                    <Search className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </form>
                         <MobileNavLink href="/">Beranda</MobileNavLink>
                         <MobileNavLink href="/products">Koleksi</MobileNavLink>
                         <MobileNavLink href="/pembayaran">pesanan saya</MobileNavLink>
