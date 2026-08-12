@@ -180,6 +180,19 @@ export default function AdminLayout({ children }) {
                         </form>
                     </div>
 
+                    {/* View Toggle */}
+                    <div className="flex items-center gap-2 border-r border-gray-200 pr-4 mr-2 shrink-0">
+                        <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider hidden sm:inline">Store</span>
+                        <button 
+                            onClick={() => router.get('/')}
+                            className="w-10 h-5 bg-batik-gold border border-yellow-500 rounded-full relative transition-colors hover:bg-yellow-500 focus:outline-none"
+                            title="Beralih ke Toko"
+                        >
+                            <div className="w-3.5 h-3.5 bg-white rounded-full absolute top-[2px] right-[2px] transition-transform" />
+                        </button>
+                        <span className="text-[10px] font-bold text-batik-900 uppercase tracking-wider hidden sm:inline">Admin</span>
+                    </div>
+
                     {/* Profile Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -192,9 +205,6 @@ export default function AdminLayout({ children }) {
                         <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuLabel>Akun Administrator</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                                <Link href="/" className="w-full">Lihat Toko (User View)</Link>
-                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600 focus:text-red-600">
                                 <Link href={route('logout')} method="post" as="button" className="w-full flex items-center gap-2">

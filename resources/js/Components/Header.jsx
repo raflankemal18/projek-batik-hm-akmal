@@ -100,10 +100,17 @@ const isUser = auth.user?.role === 'user';
 
                         {/* TOMBOL DASHBOARD (Hanya muncul jika ADMIN) */}
                         {isAdmin && (
-                            <a href={route('admin.dashboard')} className="flex items-center gap-2 text-batik-gold font-bold border border-batik-gold px-4 py-2 rounded-full hover:bg-batik-gold hover:text-batik-900 transition-all text-xs uppercase tracking-wider">
-                                <LayoutDashboard className="w-4 h-4" />
-                                Dashboard
-                            </a>
+                            <div className="flex items-center gap-2 border-l border-white/20 pl-6 ml-2">
+                                <span className="text-[10px] font-bold text-batik-gold uppercase tracking-wider">Store</span>
+                                <button 
+                                    onClick={() => router.get(route('admin.dashboard'))}
+                                    className="w-10 h-5 bg-batik-800 border border-batik-500 rounded-full relative transition-colors hover:bg-batik-700 focus:outline-none"
+                                    title="Beralih ke Admin View"
+                                >
+                                    <div className="w-3.5 h-3.5 bg-batik-400 rounded-full absolute top-[2px] left-[2px] transition-transform" />
+                                </button>
+                                <span className="text-[10px] font-medium text-batik-400 uppercase tracking-wider">Admin</span>
+                            </div>
                         )}
 
                         {!auth.user ? (
@@ -175,9 +182,16 @@ const isUser = auth.user?.role === 'user';
                         )}
 
                         {isAdmin && (
-                             <a href={route('admin.dashboard')} className="text-batik-gold hover:bg-white/5 block px-3 py-3 rounded-md text-base font-medium flex items-center gap-2">
-                                <LayoutDashboard className="w-4 h-4" /> Dashboard Admin
-                            </a>
+                            <div className="flex items-center justify-between px-3 py-3 rounded-md bg-white/5 mt-2">
+                                <span className="text-sm font-bold text-batik-gold uppercase tracking-wider">Store</span>
+                                <button 
+                                    onClick={() => router.get(route('admin.dashboard'))}
+                                    className="w-10 h-5 bg-batik-800 border border-batik-500 rounded-full relative transition-colors focus:outline-none"
+                                >
+                                    <div className="w-3.5 h-3.5 bg-batik-400 rounded-full absolute top-[2px] left-[2px] transition-transform" />
+                                </button>
+                                <span className="text-sm font-medium text-batik-400 uppercase tracking-wider">Admin</span>
+                            </div>
                         )}
                         
                         <div className="pt-4 mt-4 border-t border-white/10">
