@@ -45,7 +45,7 @@
                     <td>{{ $log->created_at->format('Y-m-d H:i:s') }}</td>
                     <td>{{ $log->type }}</td>
                     <td>{{ $log->action }}</td>
-                    <td>{{ $log->descripsion ?: '-' }}</td>
+                    <td>{{ $log->description ?: '-' }}</td>
                     <td>{{ $log->email ?? 'Sistem' }}</td>
                 </tr>
             @endforeach
