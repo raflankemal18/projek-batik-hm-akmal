@@ -44,6 +44,7 @@ Route::middleware('auth', 'role:admin', 'throttle:120,1')->group(function () {
     Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     Route::patch('/admin/orders/{order}/fulfillment', [AdminDashboardController::class, 'updateFulfillment'])->name('admin.orders.fulfillment');
+    Route::get('/admin/logs/export', [ActivityLogController::class, 'export'])->name('admin.logs.export');
     Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs');
     Route::get('/admin/banners', [\App\Http\Controllers\Admin\BannerController::class, 'index'])->name('admin.banners');
     Route::post('/admin/banners', [\App\Http\Controllers\Admin\BannerController::class, 'store'])->name('admin.banners.store');
