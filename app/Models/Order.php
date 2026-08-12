@@ -12,6 +12,7 @@ class Order extends Model
     protected $fillable = [
         'user_id', 'total_harga', 'status', 'expires_at',
         'name', 'email', 'phone', 'alamat', 'message', 'fulfillment_status',
+        'resi', 'kurir',
     ];
 
     protected $casts = [

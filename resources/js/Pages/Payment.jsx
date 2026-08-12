@@ -144,8 +144,14 @@ export default function Payment({ payments }) {
                                                 {p.status === 'success' ? 'LUNAS / DIPROSES' : 'BATAL / GAGAL'}
                                             </span>
                                             {p.status === 'success' && p.order?.fulfillment_status && (
-                                                <div className="text-xs font-bold text-batik-900 bg-batik-100 px-2 py-1 rounded-md mt-1 border border-batik-200">
-                                                    Status: {p.order.fulfillment_status === 'processing' ? 'Diproses' : p.order.fulfillment_status === 'shipped' ? 'Dikirim' : 'Diterima'}
+                                                <div className="text-xs font-bold text-batik-900 bg-batik-100 px-2 py-1 rounded-md mt-1 border border-batik-200 text-right">
+                                                    <div>Status: {p.order.fulfillment_status === 'processing' ? 'Diproses' : p.order.fulfillment_status === 'shipped' ? 'Dikirim' : 'Diterima'}</div>
+                                                    {p.order.fulfillment_status === 'shipped' && (p.order.kurir || p.order.resi) && (
+                                                        <div className="mt-1 pt-1 border-t border-batik-200 font-normal text-left">
+                                                            {p.order.kurir && <div>Kurir: {p.order.kurir}</div>}
+                                                            {p.order.resi && <div>Resi: {p.order.resi}</div>}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                             {p.status === 'success' && (

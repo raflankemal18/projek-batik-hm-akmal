@@ -159,9 +159,15 @@ class AdminDashboardController extends Controller
     {
         $validated = $request->validate([
             'fulfillment_status' => 'required|in:processing,shipped,delivered',
+            'resi' => 'nullable|string|max:255',
+            'kurir' => 'nullable|string|max:255',
         ]);
 
-        $order->update(['fulfillment_status' => $validated['fulfillment_status']]);
+        $order->update([
+            'fulfillment_status' => $validated['fulfillment_status'],
+            'resi' => $validated['resi'] ?? null,
+            'kurir' => $validated['kurir'] ?? null,
+        ]);
 
         \App\Services\AuditLogService::recordAdmin('order.fulfillment_updated', $order, "Fulfillment updated to {$validated['fulfillment_status']}");
 

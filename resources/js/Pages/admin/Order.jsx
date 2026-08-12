@@ -165,31 +165,70 @@ function StatusBadge({ status }) {
 function FulfillmentSelect({ order }) {
     if (!order) return null;
     
-    const handleUpdate = (e) => {
-        const val = e.target.value;
-        if (!val) return;
-        
+    const [status, setStatus] = React.useState(order.fulfillment_status || "");
+    const [kurir, setKurir] = React.useState(order.kurir || "");
+    const [resi, setResi] = React.useState(order.resi || "");
+    const [isLoading, setIsLoading] = React.useState(false);
+    
+    const handleUpdate = () => {
+        if (!status) return;
+        setIsLoading(true);
         router.patch(`/admin/orders/${order.id}/fulfillment`, {
-            fulfillment_status: val
+            fulfillment_status: status,
+            kurir: kurir,
+            resi: resi
         }, {
             preserveScroll: true,
-            onSuccess: () => toast.success("Status pengiriman diperbarui")
+            onSuccess: () => {
+                toast.success("Status pengiriman diperbarui");
+                setIsLoading(false);
+            },
+            onError: () => setIsLoading(false)
         });
     };
 
     return (
-        <div className="flex items-center gap-2 mt-2">
-            <Truck className="w-4 h-4 text-gray-500" />
-            <select 
-                className="text-xs border-gray-200 rounded py-1 pl-2 pr-6 bg-gray-50 text-gray-700 w-full cursor-pointer focus:ring-batik-gold focus:border-batik-gold"
-                value={order.fulfillment_status || ""}
-                onChange={handleUpdate}
+        <div className="flex flex-col gap-2 mt-2 bg-gray-50 p-2 rounded border border-gray-100">
+            <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-gray-500 shrink-0" />
+                <select 
+                    className="text-xs border-gray-200 rounded py-1 pl-2 pr-6 bg-white text-gray-700 w-full cursor-pointer focus:ring-batik-gold focus:border-batik-gold"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                >
+                    <option value="" disabled>Pilih Status...</option>
+                    <option value="processing">Diproses</option>
+                    <option value="shipped">Dikirim</option>
+                    <option value="delivered">Diterima</option>
+                </select>
+            </div>
+            
+            {status === 'shipped' && (
+                <>
+                    <input 
+                        type="text" 
+                        placeholder="Kurir (ex: JNE, J&T)"
+                        className="text-xs border-gray-200 rounded py-1 px-2 w-full focus:ring-batik-gold focus:border-batik-gold"
+                        value={kurir}
+                        onChange={(e) => setKurir(e.target.value)}
+                    />
+                    <input 
+                        type="text" 
+                        placeholder="No. Resi"
+                        className="text-xs border-gray-200 rounded py-1 px-2 w-full focus:ring-batik-gold focus:border-batik-gold"
+                        value={resi}
+                        onChange={(e) => setResi(e.target.value)}
+                    />
+                </>
+            )}
+            
+            <button 
+                onClick={handleUpdate}
+                disabled={isLoading}
+                className="w-full text-xs bg-batik-900 text-white py-1 rounded hover:bg-batik-800 disabled:opacity-50"
             >
-                <option value="" disabled>Pilih Status...</option>
-                <option value="processing">Diproses</option>
-                <option value="shipped">Dikirim</option>
-                <option value="delivered">Diterima</option>
-            </select>
+                {isLoading ? "Menyimpan..." : "Update Status"}
+            </button>
         </div>
     );
 }
