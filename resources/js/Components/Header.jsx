@@ -1,5 +1,5 @@
 import { Link, usePage, router } from "@inertiajs/react";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Dropdown from "@/Components/Dropdown";
 import { ShoppingBag, Menu, X, LayoutDashboard, Heart, UserCircle, Search, Bell } from "lucide-react";
 
@@ -13,7 +13,20 @@ const isUser = auth.user?.role === 'user';
     const [isClick, setisClick] = useState(false);
     const toggleNavbar = () => setisClick(!isClick);
 
+    const searchInputRef = useRef(null);
     const [searchQuery, setSearchQuery] = useState("");
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
     const handleSearch = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
@@ -75,10 +88,11 @@ const isUser = auth.user?.role === 'user';
                         {/* SEARCH DESKTOP */}
                         <form onSubmit={handleSearch} className="relative flex items-center">
                             <input 
+                                ref={searchInputRef}
                                 type="text" 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Cari motif..." 
+                                placeholder="Cari motif (Ctrl+K)" 
                                 className="bg-white/10 text-batik-50 placeholder-batik-200 border border-white/20 rounded-full px-4 py-1.5 focus:outline-none focus:ring-1 focus:ring-batik-gold text-sm w-48 transition-all"
                             />
                             <button type="submit" className="absolute right-3 text-batik-100 hover:text-batik-gold">
