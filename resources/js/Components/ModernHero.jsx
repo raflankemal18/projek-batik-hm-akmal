@@ -1,10 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "@inertiajs/react";
 import { Button } from "@/Components/ui/button"; 
 import { ArrowRight, Sparkles } from "lucide-react";
 
-export default function ModernHero() {
+export default function ModernHero({ banners = [] }) {
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        if (!banners || banners.length <= 1) return;
+        const interval = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [banners]);
+
+    const activeBanner = banners && banners.length > 0 ? banners[currentIndex] : null;
+
     return (
         <section className="relative w-full overflow-hidden bg-[#1a1512] text-white pt-24 pb-16 lg:pt-40 lg:pb-32">
             {/* Pattern Batik Kawung (CSS Only) */}
@@ -71,15 +83,15 @@ export default function ModernHero() {
                         <div className="relative rounded-t-full rounded-b-lg overflow-hidden shadow-2xl aspect-[3/4]">
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
                             <img
-                                alt="Model Batik Modern"
+                                alt={activeBanner ? activeBanner.title : "Model Batik Modern"}
                                 className="object-cover w-full h-full hover:scale-105 transition-transform duration-700"
-                                src="https://images.unsplash.com/photo-1617112837772-a0833a693207?q=80&w=2070&auto=format&fit=crop"
+                                src={activeBanner ? activeBanner.image_url : "https://images.unsplash.com/photo-1617112837772-a0833a693207?q=80&w=2070&auto=format&fit=crop"}
                             />
                             
                             {/* Floating Card */}
                             <div className="absolute bottom-8 left-8 right-8 z-20">
                                 <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 text-white">
-                                    <p className="font-serif text-2xl italic">"Batik Parang"</p>
+                                    <p className="font-serif text-2xl italic">"{activeBanner ? activeBanner.title : 'Batik Parang'}"</p>
                                     <p className="text-xs tracking-widest text-batik-gold mt-2 uppercase">Koleksi Eksklusif 2025</p>
                                 </div>
                             </div>

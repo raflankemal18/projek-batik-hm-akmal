@@ -11,6 +11,7 @@ import {
 } from "@/Components/ui/dropdown-menu";
 import { Sheet, SheetTrigger, SheetContent } from "@/Components/ui/sheet";
 import { 
+    Image as ImageIcon,
     LayoutDashboard, 
     ShoppingBag, 
     Package, 
@@ -69,6 +70,9 @@ export default function AdminLayout({ children }) {
                             <AdminNavLink href="/admin/users" active={route().current('admin.users')} icon={<Users />}>
                                 Data Pelanggan
                             </AdminNavLink>
+                            <AdminNavLink href="/admin/banners" active={route().current('admin.banners')} icon={<ImageIcon />}>
+                                Manajemen Banner
+                            </AdminNavLink>
                             <AdminNavLink href="/admin/logs" active={route().current('admin.logs')} icon={<ScrollText />}>
                                 Log Aktivitas
                             </AdminNavLink>
@@ -123,6 +127,7 @@ export default function AdminLayout({ children }) {
                                     </AdminNavLink>
                                     <AdminNavLink href="/admin/products" icon={<Package />}>Produk</AdminNavLink>
                                     <AdminNavLink href="/admin/users" icon={<Users />}>Pelanggan</AdminNavLink>
+                                    <AdminNavLink href="/admin/banners" icon={<ImageIcon />}>Banner</AdminNavLink>
                                     <AdminNavLink href="/admin/logs" icon={<ScrollText />}>Log</AdminNavLink>
                                 </nav>
                             </div>

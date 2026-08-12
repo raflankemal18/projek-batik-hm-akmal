@@ -6,7 +6,7 @@ import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import Review from "@/Components/pagewelcome/Review";
 
-export default function Welcome({ products }) {
+export default function Welcome({ products, banners }) {
     const sectionVariant = {
         visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
         hidden: { opacity: 0, y: 50 },
@@ -35,7 +35,7 @@ export default function Welcome({ products }) {
 
     return (
         <WelcomeLayout>
-            <ModernHero />
+            <ModernHero banners={banners} />
 
             {/* Section Produk: Latar belakang krem hangat khas kanvas batik */}
             <div className="bg-[#faf9f6] py-24"> 
