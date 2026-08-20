@@ -1,0 +1,17 @@
+{
+    "name": "Toko Baju Online",
+    "short_name": "TBJ",
+    "start_url": "/index.php",
+    "background_color": "#6777ef",
+    "description": "Toko Baju Online",
+    "display": "fullscreen",
+    "theme_color": "#6777ef",
+    "icons": [
+        {
+            "src": "baju.PNG",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
