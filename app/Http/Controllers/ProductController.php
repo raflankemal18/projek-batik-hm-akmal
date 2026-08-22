@@ -107,7 +107,7 @@ class ProductController extends Controller
 
     public function bulkDelete(Request $request)
     {
-        $this->authorize('delete', Product::class);
+        $this->authorize('deleteAny', Product::class);
 
         $request->validate([
             'ids' => 'required|array',

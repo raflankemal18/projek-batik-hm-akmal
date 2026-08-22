@@ -15,7 +15,7 @@ class OrderController extends Controller
         $format = $request->query('format', 'csv');
 
         if ($format === 'pdf') {
-            $payments = \App\Models\Payment::with("user", "payment_details.product")->get();
+            $payments = \App\Models\Payment::with("user", "paymentDetails.product")->get();
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.orders', compact('payments'));
             return $pdf->download("orders_export_" . date("Ymd_His") . ".pdf");
         }
@@ -77,7 +77,7 @@ class OrderController extends Controller
 
         try {
             DB::beginTransaction();
-            $orders = \App\Models\Order::whereIn('payment_id', $request->ids)->with('payment.user')->get();
+            $orders = \App\Models\Order::whereHas('payment', fn ($q) => $q->whereIn('id', $request->ids))->with('payment.user')->get();
             foreach ($orders as $order) {
                 $order->update(['fulfillment_status' => $request->status]);
 

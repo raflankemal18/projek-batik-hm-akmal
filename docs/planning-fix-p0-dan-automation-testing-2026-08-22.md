@@ -2,7 +2,8 @@
 
 **Tanggal:** 2026-08-22
 **Dasar:** `docs/audit-implementasi-2026-08-22.md`
-**Status:** EKSEKUSI — Fase A & Fase A.5 (migrasi repository pattern) selesai & terverifikasi (2026-08-22). Lanjut ke 2 item follow-up dari Fase A.5.
+**Status:** Fase A & Fase A.5 (migrasi repository pattern + fix deadlock) SELESAI & TERVERIFIKASI (2026-08-22). Sudah di-commit (`4cccf32` — "Complete Fase A P0 fixes and integrate refactors from other agents") dan di-push ke branch `dev`. Selanjutnya: Fase B (automation test).
+**Status Git:** commit `4cccf32` di branch `dev` — 57/57 test terverifikasi ulang PERSIS di commit ini (bukan cuma di working tree sebelum commit). Commit ini juga membawa 2 file di luar scope Fase A/A.5 yang sudah nangkring uncommitted di working tree sebelumnya (`resources/js/Components/ModernHero.jsx`, hapus `resources/js/Pages/admin/Order.jsx.orig`) — bukan hasil kerja sesi ini, ikut ter-bundle karena posisinya di working tree yang sama saat commit dibuat.
 **Aturan fase:** Setiap fase WAJIB diverifikasi (test + build + smoke) sebelum lanjut ke fase berikutnya. Fase A wajib selesai duluan — Fase B/C/D akan menulis test terhadap kode yang perilakunya masih berubah kalau Fase A belum kelar (percuma nulis test untuk bug yang lagi diperbaiki).
 
 ```
@@ -104,9 +105,70 @@ Isi gap 15 fitur yang saat ini nol test coverage (lihat `find tests -name '*.php
 | Invoice | `tests/Feature/InvoiceTest.php` | owner/admin bisa akses, user lain 403, order belum paid 404 (sudah ada logikanya di controller, tinggal ditest) |
 | Analytics | `tests/Feature/Admin/AnalyticsTest.php` | endpoint hanya admin, agregat angka sesuai data seed |
 
-### Verifikasi Fase B
-- `php artisan test` → semua file baru hijau + tidak merusak test lama.
-- Coverage kasar (opsional): `php artisan test --coverage` kalau Xdebug/PCOV tersedia di image Docker — cek dulu sebelum janji angka coverage.
+### Fase B — Batch 1 (2026-08-22)
+
+**Status:** Selesai & terverifikasi — 4 file test baru, **86/86 test passing (324 assertions)** (+29 test baru dari baseline 57/57), `npm run build` sukses.
+
+| File test | Skenario yang dites | Hasil |
+|---|---|---|
+| `tests/Feature/WishlistTest.php` | Tamu/admin dicegah akses (redirect/403), user lihat produk miliknya di Inertia view, isolasi data antar user, toggle tambah/hapus produk, validasi `product_id`. | **9/9 passed** (40 assertions) |
+| `tests/Feature/SearchTest.php` | Akses publik tamu & user, pencarian cocok `name`, pencarian cocok `description`, query kosong return semua produk, query tanpa hasil return array kosong, passing props query. | **6/6 passed** (64 assertions) |
+| `tests/Feature/OrderTrackingTest.php` | Admin update fulfillment status, resi, & kurir (`PATCH /admin/orders/{order}/fulfillment`), user lihat resi di `/pembayaran`, isolasi order antar user, proteksi non-admin & tamu (403/redirect), notifikasi in-app `OrderStatusUpdated` ke user, audit log `order.fulfillment_updated`, validasi status. | **8/8 passed** (47 assertions) |
+| `tests/Feature/InvoiceTest.php` | Proteksi tamu (redirect login), owner & admin bisa akses invoice paid (`GET /payments/{payment}/invoice`), user lain 403, payment non-success (pending) 404, payment tanpa order 404, props Inertia view `Invoice`. | **6/6 passed** (31 assertions) |
+
+### Fase B — Batch 2 (2026-08-22)
+
+**Status:** Selesai & terverifikasi — 4 file test baru, **112/112 test passing (470 assertions)** (+26 test baru dari Batch 1: 86/86, baseline: 57/57), `npm run build` sukses.
+
+| File test | Skenario yang dites | Hasil |
+|---|---|---|
+| `tests/Feature/NotificationTest.php` | Notifikasi in-app tersimpan di DB saat status order berubah, shared props Inertia `notifications`, pemilik dapat mark-as-read, user lain dapat 404 (tidak bisa mark-as-read milik orang lain), tamu redirect ke login. | **5/5 passed** (25 assertions) |
+| `tests/Feature/AdminNotificationTest.php` | Shared prop `pendingOrdersCount` untuk admin (bernilai 0 saat kosong, bertambah saat ada order paid dengan status processing/null, berkurang saat status diubah ke shipped/delivered, mengabaikan order pending/unpaid), non-admin selalu menerima nilai 0. | **5/5 passed** (45 assertions) |
+| `tests/Feature/Admin/BannerTest.php` | Admin melihat list banner di `/admin/banners`, proteksi non-admin & tamu (403/redirect), create banner + upload image, update banner + ganti image, toggle aktif/nonaktif, delete banner + hapus file storage, banner nonaktif tidak tampil di homepage, validasi input. | **9/9 passed** (51 assertions) |
+| `tests/Feature/Admin/FulfillmentTest.php` | Admin single fulfillment update (`PATCH /admin/orders/{order}/fulfillment`), single update kirim notifikasi & log audit, admin bulk fulfillment update (`PATCH /admin/orders/bulk-fulfillment`), bulk update kirim notifikasi ke masing-masing customer, proteksi non-admin & tamu (403/redirect), validasi input. | **7/7 passed** (25 assertions) |
+
+#### Temuan & Perbaikan saat Penulisan Test Batch 2
+1. **Query `Order::bulkUpdateFulfillment` mengasumsikan kolom `payment_id` di tabel `orders`:**
+   - Di `App\Http\Controllers\Admin\OrderController::bulkUpdateFulfillment()`, kode awal memanggil `Order::whereIn('payment_id', $request->ids)`.
+   - Karena tabel `orders` tidak memiliki kolom `payment_id` (foreign key `order_id` ada di tabel `payments`), query ini menghasilkan SQL error `Unknown column 'payment_id'`.
+   - Diperbaiki menjadi: `Order::whereHas('payment', fn($q) => $q->whereIn('id', $request->ids))->with('payment.user')->get()`.
+
+### Fase B — Batch 3 (2026-08-22)
+
+**Status:** Selesai & terverifikasi — 3 file test baru, **141/141 test passing (564 assertions)** (+29 test baru dari Batch 2: 112/112, Batch 1: 86/86, baseline: 57/57), `npm run build` sukses.
+
+| File test | Skenario yang dites | Hasil |
+|---|---|---|
+| `tests/Feature/Admin/UserBulkActionTest.php` | Tamu redirect login & user 403 untuk `DELETE /admin/users/bulk`, admin bulk delete beberapa user sekaligus, guard tidak bisa hapus diri sendiri (filter `auth()->id()`), hanya id yang diminta yang terhapus, validasi `ids` wajib array & `exists:users,id`, validasi id tidak ada (422) | **8/8 passed** (27 assertions) |
+| `tests/Feature/Admin/OrderBulkActionTest.php` | Tamu redirect & user 403 untuk `DELETE /admin/orders/bulk` & `PATCH /admin/orders/bulk-fulfillment`, admin bulk delete payments terpilih (`ids` → `exists:payments,id`), hanya payment yang diminta yang terhapus, admin bulk fulfillment update via payment ids (`ids` + `status` in:processing,shipped,delivered) → update `orders.fulfillment_status` lewat `whereHas('payment')`, notifikasi `OrderStatusUpdated` ke setiap pemilik order, validasi `ids`/`status` | **12/12 passed** (32 assertions) |
+| `tests/Feature/Admin/ProductBulkActionTest.php` | Tamu redirect & user 403 untuk `DELETE /admin/products/bulk`, admin bulk delete produk beserta stok & gambar terkait (cascade `products_sizes`/`product_images` via FK + `ProductService::delete` hapus file), hanya produk yang diminta yang terhapus, audit log `product.delete` untuk setiap produk, validasi `ids` wajib array & `exists:products,id` | **9/9 passed** (35 assertions) |
+
+#### Temuan & Perbaikan saat Penulisan Test Batch 3
+1. **Payload bulk action:** semua endpoint bulk memakai key `ids` (array of id), bukan `id` tunggal. `admin/users/bulk` (`UserController::bulkDelete`) memfilter `auth()->id()` sebelum delete (self-guard). `admin/orders/bulk` (`Admin/OrderController::bulkDelete`) dan `admin/orders/bulk-fulfillment` (`bulkUpdateFulfillment`) keduanya memakai `exists:payments,id` — artinya payload berisi **payment id**, bukan order id (order di-lookup via `whereHas('payment', fn($q) => $q->whereIn('id', ids))`). `admin/products/bulk` (`ProductController::bulkDelete`) memakai `exists:products,id` dan menghapus lewat `ProductService::delete()` (hapus file storage + `products_sizes`/`product_images` ikut terhapus via FK cascade).
+2. **Bug authorize `ProductController::bulkDelete`:** kode awal memanggil `$this->authorize('delete', Product::class)` yang melempar `ArgumentCountError` (policy `ProductPolicy::delete(?User, Product)` butuh instance Product, tidak bisa dipanggil dengan class string). Belum pernah terdeteksi karena endpoint ini belum ada test sebelumnya. Fix: tambah method `ProductPolicy::deleteAny(?User $user): bool` (cek `role === admin`) dan ubah controller menjadi `$this->authorize('deleteAny', Product::class)`. Perilaku sebelum fix: semua request bulk delete produk akan 500, bukan 403/validasi.
+3. **Tidak ada guard tambahan untuk bulk delete selain yang sudah ada:** user bulk self-guard sudah benar, order & product bulk tidak punya guard self/ownership tambahan — sudah sesuai karena hanya admin yang bisa akses (middleware `role:admin`).
+
+### Fase B — Batch 4 (2026-08-22) — FINAL
+
+**Status:** Selesai & terverifikasi — 3 file test baru, **165/165 test passing (644 assertions)** (+24 test baru dari Batch 3: 141/141, Batch 2: 112/112, Batch 1: 86/86, baseline: 57/57), `npm run build` sukses. **14/14 file Fase B selesai.**
+
+| File test | Skenario yang dites | Hasil |
+|---|---|---|
+| `tests/Feature/Admin/OrderExportTest.php` | Tamu redirect login & user 403 untuk `GET /admin/orders/export`, admin export CSV default (`text/csv`, disposition `orders_export_*.csv`, header `Order ID,Tanggal,User Email,Total Harga,Status` + baris per payment), isi baris sesuai 2 payments, header saja saat kosong, admin export PDF via `?format=pdf` (`application/pdf`, `%PDF`, disposition `.pdf`), proteksi PDF tamu/user | **8/8 passed** (33 assertions) |
+| `tests/Feature/Admin/PdfExportTest.php` | Tamu/user 403/redirect untuk `GET /admin/orders/export?format=pdf` & `GET /admin/logs/export?format=pdf`, admin export orders PDF (`application/pdf`, `%PDF`), admin export logs PDF (`application/pdf`, `%PDF` via `pdf.logs` view), admin export logs CSV (`text/csv`, header `ID,Type,Action,...` + baris), header saja saat kosong, user 403 untuk logs CSV | **9/9 passed** (24 assertions) |
+| `tests/Feature/Admin/AnalyticsTest.php` | Tamu redirect & user 403 untuk `GET /admin/analytics`, admin akses JSON `sales`+`categories`, sales agregat 7 hari terakhir (hanya `status=success` dalam 7 hari, pending/8 hari tidak ikut, group by date sum), kategori kosong→[], agregat `categories` via `order_details` join `products` (`whereNotNull category`, sum `quantity` per category), null category diabaikan | **7/7 passed** (23 assertions) |
+
+#### Temuan & Perbaikan saat Penulisan Test Batch 4
+1. **Response export riil:** `GET /admin/orders/export` default `text/csv` (`Content-Type: text/csv`, `Content-Disposition: attachment; filename="orders_export_Ymd_His.csv"`), `?format=pdf` → `application/pdf` via `Barryvdh\DomPDF` (`Content-Disposition: attachment; filename="orders_export_*.pdf"`, body diawali `%PDF`). `GET /admin/logs/export` default `text/csv` (`attachment; filename=activity_logs.csv`, header `ID,Type,Action,Description,User,Tanggal`), `?format=pdf` → `application/pdf` (`activity_logs.pdf`). `GET /admin/analytics` → `application/json` (`{"sales":[{"date","total"}],"categories":[{"category","total_sold"}]}`).
+2. **Bug relasi PDF orders:** `Admin/OrderController::export()` untuk pdf memanggil `Payment::with("user","payment_details.product")` dan view `pdf/orders.blade.php` memakai `$payment->payment_details->first()`, padahal relasi di model bernama `paymentDetails()` (camelCase) — mengakibatkan `BadMethodCallException: Call to undefined relationship [payment_details]` dan PDF selalu 500 sebelum fix. Fix: ubah controller menjadi `with("user","paymentDetails.product")`, view menjadi `$payment->paymentDetails`, serta tambah alias `payment_details()` di `App\Models\Payment` agar kedua penulisan tetap kompatibel.
+3. **Analytics hanya untuk admin:** endpoint `GET /admin/analytics` dijaga middleware `role:admin` (bukan policy) — tamu redirect login, user 403, hanya admin 200 JSON.
+
+### Verifikasi Fase B — FINAL (Batch 1-4)
+
+- `php artisan test` → **165 passed (644 assertions)** — **57 test lama + 108 test baru (14 file)**. Rincian: Batch 1 29 test, Batch 2 26 test, Batch 3 29 test, Batch 4 24 test. Zero regression. Per-file: `WishlistTest` 9, `SearchTest` 6, `OrderTrackingTest` 8, `InvoiceTest` 6, `NotificationTest` 5, `AdminNotificationTest` 5, `BannerTest` 9, `FulfillmentTest` 7, `UserBulkActionTest` 8, `OrderBulkActionTest` 12, `ProductBulkActionTest` 9, `OrderExportTest` 8, `PdfExportTest` 9, `AnalyticsTest` 7.
+- **Catatan selisih angka planning:** planning awal tertulis "71 test: 57 lama + 14 baru" dengan asumsi 1 test per file. Implementasi riil menulis **multiple scenario per file** (rata-rata 7-8 skenario/file: guard tamu/user/admin, isolasi, validasi, agregat) sehingga total Fase B = **165 test (57+108)**, bukan 71. Jumlah **file** tetap 14/14 sesuai planning — yang berbeda adalah granularitas test per file, bukan cakupan fitur.
+- `npm run build` → sukses tanpa error (built in 21.25s).
+- Semua 14 file Fase B telah diverifikasi per-file via `php artisan test --filter=<Nama>` sebelum full suite.
 
 ---
 
@@ -161,8 +223,8 @@ Jalan di setiap push & pull request ke branch utama. Ini akan menangkap regresi 
 - [x] **Fase A** — test 57/57 + build + smoke.
 - [x] **Fase A.5** — migrasi repository pattern (Auth, Cart, Checkout, InventoryManager) + fix bug LSP `OrderRepository::findOwned`.
 - [x] **Fase A.5** — index gabungan `(product_id, size)` + retry deadlock di `CheckoutService`, terverifikasi lewat race-condition test ulang.
-- [ ] **Fase B** - 14 file test baru untuk fitur Tahap 2–4.
-- [ ] **Fase B** - full suite hijau.
+- [x] **Fase B** - 14 file test baru untuk fitur Tahap 2–4. — **14/14 selesai & hijau (165/165, 644 assertions: 57 lama +108 baru)** — Batch 1: Wishlist, Search, OrderTracking, Invoice (29 test) | Batch 2: Notification, AdminNotification, Banner, Fulfillment (26 test) | Batch 3: UserBulk, OrderBulk, ProductBulk (29 test) | Batch 4: OrderExport, PdfExport, Analytics (24 test).
+- [x] **Fase B** - full suite hijau — **165 passed (644 assertions), zero regression, build sukses**.
 - [ ] **Fase C** - setup Playwright + 7 skenario E2E.
 - [ ] **Fase D** - GitHub Actions CI (pest + build, lalu + playwright).
 

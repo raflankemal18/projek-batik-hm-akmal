@@ -31,4 +31,9 @@ class ProductPolicy
     {
         return $user?->role === 'admin';
     }
+
+    public function deleteAny(?User $user): bool
+    {
+        return $user?->role === 'admin';
+    }
 }

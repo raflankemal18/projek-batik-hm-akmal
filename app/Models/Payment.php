@@ -26,6 +26,12 @@ class Payment extends Model
         return $this->hasMany(PaymentDetail::class, 'payment_id', 'id');
     }
 
+    // alias snake_case untuk kompatibilitas view/controller lama yang pakai payment_details
+    public function payment_details()
+    {
+        return $this->paymentDetails();
+    }
+
     public function order()
     {
         return $this->belongsTo(Order::class, 'order_id', 'id');

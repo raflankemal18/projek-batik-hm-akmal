@@ -42,7 +42,7 @@ class OrderStatusUpdated extends Notification
     {
         return [
             'order_id' => $this->order->id,
-            'payment_id' => $this->order->payment_id,
+            'payment_id' => $this->order->payment?->id,
             'message' => $this->message,
             'fulfillment_status' => $this->order->fulfillment_status,
             'resi' => $this->order->resi,

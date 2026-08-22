@@ -35,9 +35,9 @@
             <tr>
                 <td>#{{ $payment->id }}</td>
                 <td>
-                    @if($payment->payment_details->first())
-                        {{ $payment->payment_details->first()->name }}<br>
-                        <small>{{ $payment->payment_details->first()->phone }}</small>
+                    @if($payment->paymentDetails->first())
+                        {{ $payment->paymentDetails->first()->name }}<br>
+                        <small>{{ $payment->paymentDetails->first()->phone }}</small>
                     @else
                         {{ $payment->user ? $payment->user->email : "-" }}
                     @endif
