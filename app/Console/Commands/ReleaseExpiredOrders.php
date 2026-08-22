@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Order;
+use App\Contracts\Repositories\OrderRepositoryInterface;
 use App\Services\AuditLogService;
 use App\Services\InventoryManager;
 use Illuminate\Console\Command;
@@ -14,18 +14,22 @@ class ReleaseExpiredOrders extends Command
 
     protected $description = 'Restore stock and cancel draft orders that have expired';
 
+    public function __construct(
+        private OrderRepositoryInterface $orderRepository,
+        private InventoryManager $inventoryManager,
+    ) {
+        parent::__construct();
+    }
+
     public function handle(): int
     {
         DB::transaction(function () {
-            $expired = Order::where('status', 'draft')
-                ->where('expires_at', '<', now())
-                ->lockForUpdate()
-                ->get();
+            $expired = $this->orderRepository->getExpiredDraftsForUpdate();
 
             foreach ($expired as $order) {
                 foreach ($order->details as $detail) {
                     if ($detail->product_size_id) {
-                        InventoryManager::restore($detail->product_size_id, $detail->quantity, 'draft_expired');
+                        $this->inventoryManager->restore($detail->product_size_id, $detail->quantity, 'draft_expired');
                     }
                 }
                 $order->update(['status' => 'cancelled']);

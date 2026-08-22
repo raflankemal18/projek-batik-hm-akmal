@@ -21,10 +21,30 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
             ->first();
     }
 
-    public function findOwned(int $id, int $userId)
+    public function getActiveDraftForUserForUpdate(int $userId)
     {
-        return $this->model->where('id', $id)->where('user_id', $userId)->firstOrFail();
+        return $this->query()
+            ->where('user_id', $userId)
+            ->where('status', 'draft')
+            ->lockForUpdate()
+            ->first();
     }
+
+    public function getExpiredDraftsForUpdate()
+    {
+        return $this->query()
+            ->where('status', 'draft')
+            ->where('expires_at', '<', now())
+            ->lockForUpdate()
+            ->get();
+    }
+
+    // findOwned(int $id, $user): Model is inherited from BaseRepository's
+    // OwnedScopes trait — do not redeclare it here. A narrower `int $userId`
+    // override is an LSP violation against the trait's untyped `$user` param
+    // and is a fatal "Declaration ... must be compatible" error the moment
+    // this class is actually instantiated (it was previously masked because
+    // nothing in the app injected OrderRepositoryInterface yet).
 
     public function addDetail(int $orderId, array $data): OrderDetail
     {

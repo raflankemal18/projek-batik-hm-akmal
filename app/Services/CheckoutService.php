@@ -2,33 +2,38 @@
 
 namespace App\Services;
 
+use App\Contracts\Repositories\CartRepositoryInterface;
+use App\Contracts\Repositories\OrderRepositoryInterface;
+use App\Contracts\Repositories\ProductSizeRepositoryInterface;
 use App\Exceptions\EmptyCartException;
 use App\Exceptions\InsufficientStockException;
-use App\Models\Cart;
 use App\Models\Order;
-use App\Models\OrderDetail;
-use App\Models\ProductSize;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class CheckoutService
 {
+    public function __construct(
+        private OrderRepositoryInterface $orderRepository,
+        private CartRepositoryInterface $cartRepository,
+        private ProductSizeRepositoryInterface $productSizeRepository,
+        private InventoryManager $inventoryManager,
+    ) {}
+
     public function createDraftOrder(array $checkoutData, User $user): Order
     {
+        // $attempts=3: two concurrent checkouts locking the same ProductSize
+        // row can trigger an InnoDB deadlock (SQLSTATE 40001) even though
+        // only one of them should legitimately win — Laravel retries the
+        // whole transaction automatically instead of surfacing a raw 500.
         return DB::transaction(function () use ($checkoutData, $user) {
-            $existingDraft = Order::where('user_id', $user->id)
-                ->where('status', 'draft')
-                ->lockForUpdate()
-                ->first();
+            $existingDraft = $this->orderRepository->getActiveDraftForUserForUpdate($user->id);
 
             if ($existingDraft) {
                 return $existingDraft;
             }
 
-            $cart = Cart::where('user_id', $user->id)
-                ->with(['details.product'])
-                ->lockForUpdate()
-                ->first();
+            $cart = $this->cartRepository->getForCheckout($user->id);
 
             if (! $cart || $cart->details->isEmpty()) {
                 throw new EmptyCartException('Keranjang kosong');
@@ -38,10 +43,7 @@ class CheckoutService
             $orderDetails = [];
 
             foreach ($cart->details as $detail) {
-                $productSize = ProductSize::where('product_id', $detail->product_id)
-                    ->where('size', $detail->size)
-                    ->lockForUpdate()
-                    ->first();
+                $productSize = $this->productSizeRepository->findByProductAndSizeForUpdate($detail->product_id, $detail->size);
 
                 if (! $productSize || $productSize->stock < $detail->quantity) {
                     throw new InsufficientStockException(
@@ -59,7 +61,7 @@ class CheckoutService
                 $subtotal = $harga * $detail->quantity;
                 $totalHarga += $subtotal;
 
-                InventoryManager::decrement($productSize->id, $detail->quantity);
+                $this->inventoryManager->decrement($productSize->id, $detail->quantity);
 
                 $orderDetails[] = [
                     'product_id' => $detail->product_id,
@@ -71,7 +73,7 @@ class CheckoutService
                 ];
             }
 
-            $order = Order::create([
+            $order = $this->orderRepository->create([
                 'user_id' => $user->id,
                 'total_harga' => $totalHarga,
                 'status' => 'draft',
@@ -84,10 +86,7 @@ class CheckoutService
             ]);
 
             foreach ($orderDetails as $detail) {
-                OrderDetail::create(array_merge(
-                    array_diff_key($detail, ['subtotal' => null]),
-                    ['order_id' => $order->id]
-                ));
+                $this->orderRepository->addDetail($order->id, array_diff_key($detail, ['subtotal' => null]));
             }
 
             AuditLogService::recordTransaction('checkout.create', $order, 'Draft order dibuat', [
@@ -106,6 +105,6 @@ class CheckoutService
             $cart->delete();
 
             return $order;
-        });
+        }, 3);
     }
 }

@@ -8,7 +8,11 @@ interface CartRepositoryInterface
 
     public function getWithDetails(int $userId);
 
+    public function getForCheckout(int $userId);
+
     public function addDetail(int $cartId, array $data);
+
+    public function findDetailForProduct(int $cartId, int $productId, string $size);
 
     public function findDetailOwned(int $cartDetailId, int $userId);
 

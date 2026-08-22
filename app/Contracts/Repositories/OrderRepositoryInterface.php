@@ -6,6 +6,10 @@ interface OrderRepositoryInterface
 {
     public function getActiveDraftForUser(int $userId);
 
+    public function getActiveDraftForUserForUpdate(int $userId);
+
+    public function getExpiredDraftsForUpdate();
+
     public function findOwned(int $id, int $userId);
 
     public function create(array $data);

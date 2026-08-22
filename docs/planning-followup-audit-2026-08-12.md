@@ -196,7 +196,7 @@ Eksekusi per fitur, **masing-masing butuh mini-spec tersendiri yang dikonfirmasi
 - [x] **Tahap 1** — 8 test D4 §8 + test lama hijau.
 - [x] **Tahap 2** — invoice wire, fulfillment, pagination Payment, cart badge, (user dashboard dihapus sesuai request user).
 - [x] **Tahap 3** — Wishlist, Search bar global, Notifikasi admin, Export laporan (CSV & PDF), Manajemen banner/promo, Tracking resi, Bulk Actions (User, Order, Produk), Notifikasi In-app User.
-- [x] **UI/UX Tambahan** — Refactor Profile Edit & ForgotPassword, Layout Sidebar Admin (sticky, collapse persisten, absolute minimize button), Toggle View Switch (Admin/Store).
+- [x] **UI/UX Tambahan** — Refactor Profile Edit & ForgotPassword, Layout Sidebar Admin (sticky, collapse persisten, absolute minimize button), Toggle View Switch (Admin/Store), Banner Hero Slider Interaktif (kontrol prev/next, dot indicators, pause on hover).
 - [x] **Tahap 3 Selesai** — (Roles/Permissions di-skip sesuai permintaan).
 - [x] **Tahap 4** — analytics + data dashboard asli (deltas & recharts).
 

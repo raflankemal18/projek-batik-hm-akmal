@@ -2,16 +2,17 @@
 
 namespace App\Services;
 
+use App\Contracts\Repositories\CartRepositoryInterface;
 use App\Exceptions\InsufficientStockException;
 use App\Http\Requests\Cart\CartAddRequest;
 use App\Http\Requests\Cart\CartQuantityRequest;
-use App\Models\Cart;
-use App\Models\CartDetail;
 use App\Models\ProductSize;
 use App\Models\User;
 
 class CartService
 {
+    public function __construct(private CartRepositoryInterface $cartRepository) {}
+
     public function add(CartAddRequest $request, User $user): void
     {
         $productSize = ProductSize::where('product_id', $request->product_id)
@@ -22,22 +23,18 @@ class CartService
             throw new InsufficientStockException('Stok tidak cukup');
         }
 
-        $cart = Cart::firstOrCreate(['user_id' => $user->id]);
+        $cart = $this->cartRepository->getOrCreateForUser($user->id);
 
-        $existing = CartDetail::where('cart_id', $cart->id)
-            ->where('product_id', $request->product_id)
-            ->where('size', $request->size)
-            ->first();
+        $existing = $this->cartRepository->findDetailForProduct($cart->id, $request->product_id, $request->size);
 
         if ($existing) {
             $newQty = $existing->quantity + $request->quantity;
             if ($newQty > $productSize->stock) {
                 throw new InsufficientStockException('Jumlah melebihi stok tersedia');
             }
-            $existing->update(['quantity' => $newQty]);
+            $this->cartRepository->updateDetail($existing->id, ['quantity' => $newQty]);
         } else {
-            CartDetail::create([
-                'cart_id' => $cart->id,
+            $this->cartRepository->addDetail($cart->id, [
                 'product_id' => $request->product_id,
                 'quantity' => $request->quantity,
                 'size' => $request->size,
@@ -47,9 +44,7 @@ class CartService
 
     public function updateQuantity(CartQuantityRequest $request, User $user): void
     {
-        $cartDetail = CartDetail::where('id', $request->cart_detail_id)
-            ->whereHas('cart', fn ($q) => $q->where('user_id', $user->id))
-            ->firstOrFail();
+        $cartDetail = $this->cartRepository->findDetailOwned($request->cart_detail_id, $user->id);
 
         $productSize = ProductSize::where('product_id', $cartDetail->product_id)
             ->where('size', $cartDetail->size)
@@ -59,22 +54,20 @@ class CartService
             throw new InsufficientStockException('Stok tidak cukup');
         }
 
-        $cartDetail->update(['quantity' => $request->quantity]);
+        $this->cartRepository->updateDetail($cartDetail->id, ['quantity' => $request->quantity]);
     }
 
     public function remove(int $cartDetailId, User $user): void
     {
-        $cartDetail = CartDetail::where('id', $cartDetailId)
-            ->whereHas('cart', fn ($q) => $q->where('user_id', $user->id))
-            ->firstOrFail();
+        $cartDetail = $this->cartRepository->findDetailOwned($cartDetailId, $user->id);
 
-        $cartDetail->delete();
+        $this->cartRepository->removeDetail($cartDetail->id);
     }
 
     public function getCartWithProducts(User $user)
     {
-        return Cart::with(['details.product.images', 'user'])
-            ->where('user_id', $user->id)
-            ->get();
+        $cart = $this->cartRepository->getWithDetails($user->id);
+
+        return $cart ? collect([$cart]) : collect();
     }
 }

@@ -2,19 +2,19 @@
 
 namespace App\Services;
 
+use App\Contracts\Repositories\ProductSizeRepositoryInterface;
 use App\Exceptions\InsufficientStockException;
-use App\Models\ProductSize;
 
 class InventoryManager
 {
-    public static function decrement(int $productSizeId, int $qty): void
+    public function __construct(private ProductSizeRepositoryInterface $productSizeRepository) {}
+
+    public function decrement(int $productSizeId, int $qty): void
     {
-        $productSize = ProductSize::where('id', $productSizeId)->first();
+        $productSize = $this->productSizeRepository->findOrNull($productSizeId);
         $stockBefore = $productSize?->stock ?? 0;
 
-        $affected = ProductSize::where('id', $productSizeId)
-            ->where('stock', '>=', $qty)
-            ->decrement('stock', $qty);
+        $affected = $this->productSizeRepository->decrementIfAvailable($productSizeId, $qty);
 
         if ($affected === 0) {
             throw new InsufficientStockException(
@@ -37,12 +37,12 @@ class InventoryManager
         ]);
     }
 
-    public static function restore(int $productSizeId, int $qty, ?string $reason = null): void
+    public function restore(int $productSizeId, int $qty, ?string $reason = null): void
     {
-        $productSize = ProductSize::where('id', $productSizeId)->first();
+        $productSize = $this->productSizeRepository->findOrNull($productSizeId);
         $stockBefore = $productSize?->stock ?? 0;
 
-        ProductSize::where('id', $productSizeId)->increment('stock', $qty);
+        $this->productSizeRepository->increment($productSizeId, $qty);
 
         AuditLogService::recordTransaction('stock.restore', $productSize, 'Stok dikembalikan', [
             'product_id' => $productSize?->product_id,

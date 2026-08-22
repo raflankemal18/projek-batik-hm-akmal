@@ -26,9 +26,26 @@ class CartRepository extends BaseRepository implements CartRepositoryInterface
             ->first();
     }
 
+    public function getForCheckout(int $userId): ?Cart
+    {
+        return $this->query()
+            ->with(['details.product'])
+            ->where('user_id', $userId)
+            ->lockForUpdate()
+            ->first();
+    }
+
     public function addDetail(int $cartId, array $data): CartDetail
     {
         return CartDetail::create(array_merge(['cart_id' => $cartId], $data));
+    }
+
+    public function findDetailForProduct(int $cartId, int $productId, string $size): ?CartDetail
+    {
+        return CartDetail::where('cart_id', $cartId)
+            ->where('product_id', $productId)
+            ->where('size', $size)
+            ->first();
     }
 
     public function findDetailOwned(int $cartDetailId, int $userId): CartDetail

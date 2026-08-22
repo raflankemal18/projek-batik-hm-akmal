@@ -11,12 +11,8 @@ class CheckoutController extends Controller
 
     public function store(CheckoutRequest $request)
     {
-        try {
-            $this->checkoutService->createDraftOrder($request->validated(), $request->user());
+        $this->checkoutService->createDraftOrder($request->validated(), $request->user());
 
-            return redirect()->route('pembayaran')->with('success', 'Pesanan berhasil dibuat!');
-        } catch (\Exception $e) {
-            return back()->withErrors(['message' => 'Gagal membuat pesanan: ' . $e->getMessage()]);
-        }
+        return redirect()->route('pembayaran')->with('success', 'Pesanan berhasil dibuat!');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Contracts\Repositories\UserRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuditLogService;
@@ -16,6 +17,8 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
+    public function __construct(private UserRepositoryInterface $userRepository) {}
+
     /**
      * Display the registration view.
      */
@@ -37,11 +40,17 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        $user = $this->userRepository->create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        // 'role' is deliberately not in User::$fillable (defense-in-depth
+        // against mass-assignment from request input), so it's set via
+        // direct property assignment instead of the create() array.
+        $user->role = 'user';
+        $user->save();
 
         event(new Registered($user));
 

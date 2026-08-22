@@ -98,13 +98,9 @@ class PaymentController extends Controller
 
     public function webhook(Request $request, PaymentWebhookService $webhookService)
     {
-        try {
-            $webhookService->handle($request->all());
+        $webhookService->handle($request->all());
 
-            return response()->json(['status' => 'ok']);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Gagal memproses webhook: ' . $e->getMessage()], 500);
-        }
+        return response()->json(['status' => 'ok']);
     }
 
     public function invoice(Payment $payment)

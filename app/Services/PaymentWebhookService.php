@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentWebhookService
 {
-    public function __construct(private MidtransService $midtransService) {}
+    public function __construct(
+        private MidtransService $midtransService,
+        private InventoryManager $inventoryManager,
+    ) {}
 
     public function handle(array $payload): void
     {
@@ -77,7 +80,7 @@ class PaymentWebhookService
 
                 foreach ($payment->order?->details ?? [] as $detail) {
                     if ($detail->product_size_id) {
-                        InventoryManager::restore($detail->product_size_id, $detail->quantity, "payment.{$status}");
+                        $this->inventoryManager->restore($detail->product_size_id, $detail->quantity, "payment.{$status}");
                     }
                 }
             }
