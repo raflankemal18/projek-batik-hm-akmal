@@ -133,6 +133,8 @@ export default function ModernDetail({ product }) {
                                 {product.sizes && product.sizes.map((size) => (
                                     <button
                                         key={size.id}
+                                        data-testid="size-option"
+                                        data-size={size.size}
                                         onClick={() => setSelectedSize(size)}
                                         disabled={size.stock <= 0}
                                         className={`w-14 h-14 rounded-full border transition-all flex items-center justify-center font-medium ${
@@ -174,7 +176,8 @@ export default function ModernDetail({ product }) {
                                 </Button>
                             ) : (
                                 <>
-                                    <Button 
+                                    <Button
+                                        data-testid="add-to-cart"
                                         onClick={handleAddToCart}
                                         size="lg" 
                                         className="flex-1 rounded-full bg-batik-gold hover:bg-yellow-600 text-black font-bold text-lg h-12"

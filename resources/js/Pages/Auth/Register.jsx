@@ -43,6 +43,7 @@ export default function Register() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
                             <input
+                                data-testid="register-name"
                                 type="text"
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
@@ -55,6 +56,7 @@ export default function Register() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                             <input
+                                data-testid="register-email"
                                 type="email"
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
@@ -67,6 +69,7 @@ export default function Register() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                             <input
+                                data-testid="register-password"
                                 type="password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
@@ -79,6 +82,7 @@ export default function Register() {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password</label>
                             <input
+                                data-testid="register-password-confirmation"
                                 type="password"
                                 value={data.password_confirmation}
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
@@ -88,7 +92,7 @@ export default function Register() {
                             <InputError message={errors.password_confirmation} className="mt-2" />
                         </div>
 
-                        <Button disabled={processing} className="w-full h-12 bg-batik-gold hover:bg-yellow-600 text-batik-900 font-bold rounded-lg transition-all text-base">
+                        <Button data-testid="register-submit" disabled={processing} className="w-full h-12 bg-batik-gold hover:bg-yellow-600 text-batik-900 font-bold rounded-lg transition-all text-base">
                             Daftar Akun
                         </Button>
 

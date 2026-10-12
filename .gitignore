@@ -17,3 +17,9 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Playwright (Fase C)
+/playwright-report
+/test-results
+/.playwright
+/.env.e2e

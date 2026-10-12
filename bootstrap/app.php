@@ -23,6 +23,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+
+        // Midtrans mengirim notifikasi pembayaran dari server mereka sendiri,
+        // tanpa token CSRF milik aplikasi ini — tanpa pengecualian ini endpoint
+        // webhook membalas 419 dan pembayaran tidak pernah terkonfirmasi
+        // (webhook memang tidak bisa diuji lewat feature test karena token
+        // CSRF otomatis dilewati saat running unit tests, jadi bug ini tidak
+        // pernah terlihat di suite Pest). Keamanan tetap dijaga signature
+        // Midtrans yang diverifikasi di PaymentWebhookService::verifySignature().
+        $middleware->validateCsrfTokens(except: [
+            'midtrans/webhook',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (InsufficientStockException|EmptyCartException $e, Request $request) {

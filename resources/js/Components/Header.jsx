@@ -87,7 +87,8 @@ const isUser = auth.user?.role === 'user';
                     <div className="hidden md:flex items-center gap-6">
                         {/* SEARCH DESKTOP */}
                         <form onSubmit={handleSearch} className="relative flex items-center">
-                            <input 
+                            <input
+                                data-testid="header-search"
                                 ref={searchInputRef}
                                 type="text" 
                                 value={searchQuery}
@@ -195,6 +196,7 @@ const isUser = auth.user?.role === 'user';
                                     <Dropdown.Content align="right">
                                         <Dropdown.Link href={route("profile.edit")}>Profil Saya</Dropdown.Link>
                                         <button
+                                            data-testid="logout"
                                             onClick={handleLogout}
                                             className="block w-full px-4 py-2 text-start text-sm leading-5 text-red-600 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition duration-150 ease-in-out"
                                         >

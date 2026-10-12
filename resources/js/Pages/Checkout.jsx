@@ -54,7 +54,13 @@ export default function Checkout({ orders }) {
                 toast.success("Pesanan berhasil dibuat!");
             },
             onError: (errors) => {
-                toast.error("Gagal memproses checkout.", { description: errors?.message });
+                // Kontrak error D3/A.2: InsufficientStockException & EmptyCartException
+                // dibalikkan handler terpusat di bootstrap/app.php sebagai errors.stock
+                // (bukan errors.message). Kalau hanya baca errors.message, pesan
+                // "Stok tidak cukup untuk ..." tidak pernah sampai ke user.
+                toast.error(errors?.stock ? "Stok tidak mencukupi." : "Gagal memproses checkout.", {
+                    description: errors?.stock || errors?.message,
+                });
             },
         });
     };
@@ -106,7 +112,7 @@ export default function Checkout({ orders }) {
                                 <InputGroup label="Nama Lengkap" id="name" value={values.name} onChange={handleChange} icon={<User size={16}/>} />
                                 <InputGroup label="Email" id="email" type="email" value={values.email} onChange={handleChange} icon={<Mail size={16}/>} />
                                 <div className="md:col-span-2">
-                                    <InputGroup label="Nomor Telepon (WhatsApp)" id="phone" type="tel" value={values.phone} onChange={handleChange} icon={<Phone size={16}/>} placeholder="0812..." />
+                                    <InputGroup label="Nomor Telepon (WhatsApp)" id="phone" testId="checkout-phone" type="tel" value={values.phone} onChange={handleChange} icon={<Phone size={16}/>} placeholder="0812..." />
                                 </div>
                             </div>
                         </div>
@@ -119,8 +125,9 @@ export default function Checkout({ orders }) {
                             <div className="space-y-5">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Alamat Lengkap</label>
-                                    <textarea 
-                                        id="alamat" 
+                                    <textarea
+                                        id="alamat"
+                                        data-testid="checkout-address"
                                         rows="3"
                                         className="w-full rounded-lg border-gray-300 focus:border-batik-gold focus:ring-1 focus:ring-batik-gold p-3 text-sm transition-all shadow-sm resize-none"
                                         placeholder="Nama Jalan, No Rumah, RT/RW, Kelurahan, Kecamatan, Kota, Kode Pos"
@@ -130,8 +137,9 @@ export default function Checkout({ orders }) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Catatan Pesanan (Opsional)</label>
-                                    <textarea 
-                                        id="message" 
+                                    <textarea
+                                        id="message"
+                                        data-testid="checkout-message"
                                         rows="2"
                                         className="w-full rounded-lg border-gray-300 focus:border-batik-gold focus:ring-1 focus:ring-batik-gold p-3 text-sm transition-all shadow-sm resize-none"
                                         placeholder="Contoh: Titip di pos satpam, atau bungkus kado"
@@ -193,8 +201,9 @@ export default function Checkout({ orders }) {
                                 </div>
                             </div>
 
-                            <Button 
-                                type="submit" 
+                            <Button
+                                data-testid="checkout-submit"
+                                type="submit"
                                 disabled={loading}
                                 className="w-full mt-8 bg-batik-900 hover:bg-batik-800 text-white font-bold h-14 rounded-lg text-base shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                             >

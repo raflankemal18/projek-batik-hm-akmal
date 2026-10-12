@@ -118,19 +118,19 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2 md:col-span-1">
                             <label className="block text-sm font-medium mb-1">Nama Produk</label>
-                            <input type="text" id="name" value={data.name} onChange={handleChange} required className="w-full p-2 border rounded-md focus:ring-batik-gold" />
+                            <input data-testid="admin-product-name" type="text" id="name" value={data.name} onChange={handleChange} required className="w-full p-2 border rounded-md focus:ring-batik-gold" />
                         </div>
                         <div className="col-span-2 md:col-span-1">
                             <label className="block text-sm font-medium mb-1">Harga (Rp)</label>
-                            <input type="number" id="harga" value={data.harga} onChange={handleChange} required className="w-full p-2 border rounded-md focus:ring-batik-gold" />
+                            <input data-testid="admin-product-price" type="number" id="harga" value={data.harga} onChange={handleChange} required className="w-full p-2 border rounded-md focus:ring-batik-gold" />
                         </div>
                         <div className="col-span-2">
                             <label className="block text-sm font-medium mb-1">Deskripsi</label>
-                            <textarea id="description" value={data.description} onChange={handleChange} rows="3" className="w-full p-2 border rounded-md focus:ring-batik-gold" />
+                            <textarea data-testid="admin-product-description" id="description" value={data.description} onChange={handleChange} rows="3" className="w-full p-2 border rounded-md focus:ring-batik-gold" />
                         </div>
                         <div className="col-span-2">
                             <label className="block text-sm font-medium mb-1">Kategori</label>
-                            <select id="category" value={data.category} onChange={handleChange} required className="w-full p-2 border rounded-md focus:ring-batik-gold bg-white">
+                            <select data-testid="admin-product-category" id="category" value={data.category} onChange={handleChange} required className="w-full p-2 border rounded-md focus:ring-batik-gold bg-white">
                                 <option value="">( — )</option>
                                 <option value="pria">pria</option>
                                 <option value="wanita">wanita</option>
@@ -144,8 +144,8 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                         <label className="block text-sm font-bold mb-3 text-batik-900">Stok & Ukuran</label>
                         {data.sizes.map((size, index) => (
                             <div key={index} className="flex gap-3 mb-2 items-center">
-                                <input type="text" placeholder="Size" value={size.size} onChange={(e) => handleSizeChange(index, "size", e.target.value)} className="w-1/3 p-2 border rounded text-sm uppercase" required />
-                                <input type="number" placeholder="Stok" value={size.stock} onChange={(e) => handleSizeChange(index, "stock", e.target.value)} className="w-1/3 p-2 border rounded text-sm" required />
+                                <input data-testid="admin-product-size" type="text" placeholder="Size" value={size.size} onChange={(e) => handleSizeChange(index, "size", e.target.value)} className="w-1/3 p-2 border rounded text-sm uppercase" required />
+                                <input data-testid="admin-product-stock" type="number" placeholder="Stok" value={size.stock} onChange={(e) => handleSizeChange(index, "stock", e.target.value)} className="w-1/3 p-2 border rounded text-sm" required />
                                 <button type="button" onClick={() => removeSizeRow(index)} className="text-red-500 hover:bg-red-50 p-2 rounded"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         ))}
@@ -166,7 +166,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                         )}
                     </div>
 
-                    <Button type="submit" disabled={isLoading} className="w-full bg-batik-900 hover:bg-batik-800 text-white gap-2">
+                    <Button data-testid="admin-product-submit" type="submit" disabled={isLoading} className="w-full bg-batik-900 hover:bg-batik-800 text-white gap-2">
                         <Save className="w-4 h-4" /> {isLoading ? "Menyimpan..." : "Simpan Perubahan"}
                     </Button>
                 </form>

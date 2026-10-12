@@ -61,6 +61,7 @@ export default function Login({ status, canResetPassword }) {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                             <input
+                                data-testid="login-email"
                                 type="email"
                                 value={data.email}
                                 onChange={(e) => setData("email", e.target.value)}
@@ -80,6 +81,7 @@ export default function Login({ status, canResetPassword }) {
                                 )}
                             </div>
                             <input
+                                data-testid="login-password"
                                 type="password"
                                 value={data.password}
                                 onChange={(e) => setData("password", e.target.value)}
@@ -96,7 +98,7 @@ export default function Login({ status, canResetPassword }) {
                             </label>
                         </div>
 
-                        <Button disabled={processing} className="w-full h-12 bg-batik-900 hover:bg-batik-800 text-white font-bold rounded-lg transition-all text-base">
+                        <Button data-testid="login-submit" disabled={processing} className="w-full h-12 bg-batik-900 hover:bg-batik-800 text-white font-bold rounded-lg transition-all text-base">
                             Masuk Sekarang
                         </Button>
 

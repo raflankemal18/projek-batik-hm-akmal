@@ -103,7 +103,7 @@ export default function AdminProduct({ products }) {
                         <p className="text-gray-500">Kelola stok, harga, dan varian batik.</p>
                     </div>
                     
-                    <Button onClick={handleCreate} className="bg-batik-gold hover:bg-yellow-600 text-batik-900 font-bold gap-2">
+                    <Button data-testid="admin-product-create" onClick={handleCreate} className="bg-batik-gold hover:bg-yellow-600 text-batik-900 font-bold gap-2">
                         <Plus className="w-4 h-4" /> Tambah Produk
                     </Button>
                 </div>
@@ -159,7 +159,7 @@ export default function AdminProduct({ products }) {
                                         </td>
                                     </tr>
                                 ) : list.map((product) => (
-                                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={product.id} data-testid="admin-product-row" data-product-name={product.name} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <input 
                                                 type="checkbox"

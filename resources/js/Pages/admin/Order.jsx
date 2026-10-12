@@ -309,7 +309,9 @@ function FulfillmentSelect({ order }) {
         <div className="flex flex-col gap-2 mt-2 bg-gray-50 p-2 rounded border border-gray-100">
             <div className="flex items-center gap-2">
                 <Truck className="w-4 h-4 text-gray-500 shrink-0" />
-                <select 
+                <select
+                    data-testid="fulfillment-select"
+                    data-order-id={order.id}
                     className="text-xs border-gray-200 rounded py-1 pl-2 pr-6 bg-white text-gray-700 w-full cursor-pointer focus:ring-batik-gold focus:border-batik-gold"
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
@@ -323,15 +325,17 @@ function FulfillmentSelect({ order }) {
             
             {status === 'shipped' && (
                 <>
-                    <input 
-                        type="text" 
+                    <input
+                        data-testid="fulfillment-courier"
+                        type="text"
                         placeholder="Kurir (ex: JNE, J&T)"
                         className="text-xs border-gray-200 rounded py-1 px-2 w-full focus:ring-batik-gold focus:border-batik-gold"
                         value={kurir}
                         onChange={(e) => setKurir(e.target.value)}
                     />
-                    <input 
-                        type="text" 
+                    <input
+                        data-testid="fulfillment-resi"
+                        type="text"
                         placeholder="No. Resi"
                         className="text-xs border-gray-200 rounded py-1 px-2 w-full focus:ring-batik-gold focus:border-batik-gold"
                         value={resi}

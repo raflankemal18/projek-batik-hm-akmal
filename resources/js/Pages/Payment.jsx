@@ -3,11 +3,11 @@ import { Head, router } from "@inertiajs/react";
 import WelcomeLayout from "@/Layouts/WelcomeLayout";
 import { formatRupiah } from "@/lib/format";
 import { Button } from "@/Components/ui/button";
-import { CheckCircle, Clock, AlertTriangle, XCircle, History, Package } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, CreditCard, XCircle, History, Package } from "lucide-react";
 import { toast } from "sonner";
 import Pagination from "@/Components/Pagination";
 
-export default function Payment({ payments }) {
+export default function Payment({ payments, unpaidOrder }) {
     const paymentsList = payments?.data || payments || [];
     
     // Cari transaksi yang statusnya pending (Belum dibayar)
@@ -15,6 +15,28 @@ export default function Payment({ payments }) {
     
     // Filter riwayat (Success & Failed)
     const historyPayments = paymentsList.filter(p => p.status !== 'pending');
+
+    // Order hasil checkout yang belum punya payment sama sekali. Tanpa kartu di
+    // bawah ini, user tidak punya jalan pembayaran apa pun: POST /payment hanya
+    // dipanggil dari halaman ini.
+    const canStartPayment = !pendingPayment && unpaidOrder && !unpaidOrder.payment;
+    const [isStartingPayment, setIsStartingPayment] = React.useState(false);
+
+    const handleStartPayment = () => {
+        setIsStartingPayment(true);
+
+        router.post('/payment', {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsStartingPayment(false);
+                toast.success("Tagihan dibuat, lanjutkan pembayaran.");
+            },
+            onError: (errors) => {
+                setIsStartingPayment(false);
+                toast.error("Gagal membuat tagihan.", { description: errors?.message });
+            },
+        });
+    };
 
     useEffect(() => {
         // Setup Midtrans Snap (Ambil Client Key dari ENV)
@@ -61,6 +83,56 @@ export default function Payment({ payments }) {
                     Pesanan Saya
                 </h1>
 
+                {/* --- 0. ORDER BELUM ADA TAGIHANNYA (hasil checkout, belum initiate payment) --- */}
+                {canStartPayment && (
+                    <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-700" data-testid="unpaid-order">
+                        <div className="bg-white rounded-2xl shadow-xl border-l-4 border-l-yellow-400 overflow-hidden relative">
+                            <div className="p-6 md:p-8">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-3 bg-yellow-100 rounded-full text-yellow-600 animate-pulse">
+                                            <Clock className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-bold text-gray-900">Pesanan Belum Dibayar</h2>
+                                            <p className="text-sm text-gray-500">Order #{unpaidOrder.id}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-left md:text-right">
+                                        <p className="text-sm text-gray-500">Total Tagihan</p>
+                                        <p className="text-3xl font-serif font-bold text-batik-gold">{formatRupiah(unpaidOrder.total_harga)}</p>
+                                    </div>
+                                </div>
+
+                                {unpaidOrder.details?.length > 0 && (
+                                    <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-100">
+                                        <p className="text-sm font-bold text-gray-700 mb-2">Item:</p>
+                                        <ul className="space-y-1">
+                                            {unpaidOrder.details.map((item) => (
+                                                <li key={item.id} className="text-sm text-gray-600 flex justify-between">
+                                                    <span>{item.quantity}x {item.product?.name || "Produk Batik"} ({item.size})</span>
+                                                    <span className="font-medium text-gray-900">{formatRupiah(item.harga * item.quantity)}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    <Button
+                                        data-testid="start-payment"
+                                        onClick={handleStartPayment}
+                                        disabled={isStartingPayment}
+                                        className="flex-1 bg-batik-gold hover:bg-yellow-600 text-batik-900 font-bold h-12 text-base shadow-md"
+                                    >
+                                        <CreditCard className="w-5 h-5" /> {isStartingPayment ? "Membuat Tagihan..." : "Bayar Sekarang"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* --- 1. SEKSI TAGIHAN PENDING (Hanya muncul jika ada) --- */}
                 {pendingPayment && (
                     <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -89,7 +161,9 @@ export default function Payment({ payments }) {
                                         {pendingPayment.payment_details?.map((item, idx) => (
                                             <li key={idx} className="text-sm text-gray-600 flex justify-between">
                                                 <span>{item.quantity}x {item.product?.name || "Produk Batik"} ({item.size})</span>
-                                                <span className="font-medium text-gray-900">Rp {(item.price * item.quantity).toLocaleString('id-ID')}</span>
+                                                {/* Kolom di payment_details bernama `harga`, bukan `price` —
+                                                        sebelumnya tertulis item.price sehingga tampil "Rp NaN". */}
+                                                <span className="font-medium text-gray-900">{formatRupiah(item.harga * item.quantity)}</span>
                                             </li>
                                         ))}
                                     </ul>

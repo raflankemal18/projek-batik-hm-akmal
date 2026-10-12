@@ -77,9 +77,10 @@ export default function ProductCards({ products }) {
                             {/* LOGIKA: Sembunyikan Tombol Cart Jika Admin */}
                             {!isAdmin && (
                                 <>
-                                    <Button 
-                                        size="icon" 
-                                        variant="secondary" 
+                                    <Button
+                                        data-testid="product-card-cart-button"
+                                        size="icon"
+                                        variant="secondary"
                                         className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg"
                                         onClick={(e) => addToCart(e, product)}
                                         title="Add to Cart"
@@ -109,7 +110,7 @@ export default function ProductCards({ products }) {
 
                     {/* Content Section */}
                     <div className="p-4">
-                        <Link href={`/products/${product.id}`}>
+                        <Link href={`/products/${product.id}`} data-testid="product-card-link">
                             <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {product.name}
                             </h3>

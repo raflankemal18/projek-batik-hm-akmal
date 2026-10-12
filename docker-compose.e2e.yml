@@ -1,0 +1,24 @@
+# Override untuk menjalankan E2E Playwright (Fase C).
+#
+# Pakai:  docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build
+#
+# Bedanya dari docker-compose.yml:
+#   1. Container `app` membaca .env.e2e (bukan .env milikmu), sehingga DB yang
+#      disentuh E2E terpisah dari DB pengembangan: marketplace_batik_e2e.
+#   2. Service `db` dibuatkan dengan database marketplace_batik_e2e.
+#
+# Catatan: service `db` hanya membuat database saat volume-nya masih kosong.
+# Kalau volume db-data sudah terisi dari pemakaian sebelumnya, jalankan:
+#   docker compose exec db mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS marketplace_batik_e2e"
+services:
+  app:
+    volumes:
+      - .:/var/www/html
+      - ./.env.e2e:/var/www/html/.env
+      - vendor-data:/var/www/html/vendor
+      - node-modules-data:/var/www/html/node_modules
+      - public-build-data:/var/www/html/public/build
+
+  db:
+    environment:
+      MYSQL_DATABASE: marketplace_batik_e2e

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, usePage, router } from "@inertiajs/react";
 import { Button } from "@/Components/ui/button";
+import { Toaster } from "sonner";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -196,7 +197,7 @@ export default function AdminLayout({ children }) {
                     {/* Profile Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full shrink-0">
+                            <Button data-testid="admin-profile-trigger" variant="ghost" size="icon" className="rounded-full shrink-0">
                                 <div className="w-8 h-8 rounded-full bg-batik-100 flex items-center justify-center text-batik-900 border border-batik-200">
                                     <Users className="w-4 h-4" />
                                 </div>
@@ -207,7 +208,7 @@ export default function AdminLayout({ children }) {
                             <DropdownMenuSeparator />
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600 focus:text-red-600">
-                                <Link href={route('logout')} method="post" as="button" className="w-full flex items-center gap-2">
+                                <Link data-testid="admin-logout" href={route('logout')} method="post" as="button" className="w-full flex items-center gap-2">
                                     <LogOut className="w-4 h-4" /> Keluar
                                 </Link>
                             </DropdownMenuItem>
@@ -220,6 +221,11 @@ export default function AdminLayout({ children }) {
                     {children}
                 </main>
             </div>
+
+            {/* Halaman admin memanggil toast (simpan produk, update status kirim,
+                bulk action, dll). Tanpa Toaster di layout ini, semua feedback
+                tersebut tidak pernah terlihat admin sama sekali. */}
+            <Toaster position="top-center" richColors />
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import React from "react";
 
-const InputGroup = ({ label, id, type = "text", value, onChange, icon, placeholder }) => (
+const InputGroup = ({ label, id, testId, type = "text", value, onChange, icon, placeholder }) => (
     <div>
         <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
         <div className="relative group">
@@ -10,6 +10,7 @@ const InputGroup = ({ label, id, type = "text", value, onChange, icon, placehold
             <input
                 type={type}
                 id={id}
+                data-testid={testId}
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}

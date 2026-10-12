@@ -206,8 +206,9 @@ export default function Keranjang({ keranjangs }) {
                                 <span className="font-bold text-batik-900 text-base">Total Tagihan</span>
                                 <span className="font-bold text-2xl text-batik-gold font-serif">{formatRupiah(total)}</span>
                             </div>
-                            <Button 
-                                onClick={handleCheckout} 
+                            <Button
+                                data-testid="cart-checkout"
+                                onClick={handleCheckout}
                                 disabled={loading}
                                 className="w-full h-14 bg-batik-900 hover:bg-batik-800 text-white font-bold rounded-lg text-base flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
                             >

@@ -176,23 +176,110 @@ Isi gap 15 fitur yang saat ini nol test coverage (lihat `find tests -name '*.php
 
 **Kenapa Playwright, bukan Dusk:** stack sudah pakai Vite/Node untuk frontend, jadi toolchain Node bukan beban baru. Playwright lebih natural untuk interaksi SPA React+Inertia (auto-wait, trace viewer untuk debug kegagalan CI) dan tidak butuh ChromeDriver/Selenium yang sering rewel di CI container.
 
-### C.1 Setup
-- `npm install -D @playwright/test` + `npx playwright install --with-deps chromium`.
-- `playwright.config.ts` — `baseURL` mengarah ke instance Docker lokal (atau `php artisan serve` di CI), `webServer` config supaya Playwright auto-start app sebelum test jalan.
-- Folder `tests/e2e/`.
+Rencana lengkap (termasuk temuan dari baca kode & keputusan yang dikunci bersama user) ada di
+[`docs/planning-fase-c-playwright-e2e-2026-08-22.md`](./planning-fase-c-playwright-e2e-2026-08-22.md).
 
-### C.2 Alur kritis yang perlu dites (urutan prioritas)
-1. **Registrasi → login → landing di dashboard yang benar** (ini yang paling relevan — langsung memverifikasi Fase A.1 tidak regresi lagi di masa depan).
-2. Browse produk → filter kategori → tambah ke keranjang → checkout → isi alamat.
-3. Checkout dengan stok habis → pesan error tampil (verifikasi Fase A.2).
-4. Bayar via Midtrans **sandbox** (pakai kredensial sandbox, bukan produksi) → status order berubah jadi paid.
-5. Admin: lihat order baru → ubah fulfillment status → user melihat perubahan status di halaman pembayaran.
-6. Admin: buat produk baru dengan kategori → cek muncul di filter user.
-7. Search global → hasil relevan muncul.
+### Status Eksekusi (2026-08-22)
 
-### Verifikasi Fase C
-- Semua skenario di atas hijau lokal (`npx playwright test`) sebelum masuk ke CI.
-- Screenshot/trace on-failure aktif (`trace: 'retain-on-failure'`) supaya kegagalan CI gampang didiagnosis tanpa akses server.
+**Status: SELESAI & TERVERIFIKASI — 9/9 test hijau (2,2 menit), `php artisan test` 173/173, build sukses.**
+
+Sesi lanjutan yang sama juga menutup dua temuan terbuka (alur pembayaran buntu & `payment_details`
+kosong) — rinciannya di §10 dokumen `planning-fase-c-playwright-e2e-2026-08-22.md`.
+
+Keputusan yang dikunci bersama user sebelum eksekusi: skenario 4 memakai **simulasi webhook lokal**
+(bukan Snap sandbox asli), boleh mengubah kode produksi (testid + fix bug), stack dijalankan lewat
+**Docker Compose penuh** (nginx `:8000` + php-fpm + MySQL), dan Fase D tidak dikejar sekarang.
+
+#### Yang dibuat
+| File | Isi |
+|---|---|
+| `playwright.config.ts` | `baseURL http://localhost:8000`, `workers: 1` (satu DB dibagi semua spec), `trace: 'retain-on-failure'`, `screenshot: 'only-on-failure'`, `use.serviceWorkers: 'block'`, `webServer` nonaktif (stack dikelola docker) |
+| `.env.e2e` + `docker-compose.e2e.yml` | Container app membaca `.env.e2e` (DB terpisah `marketplace_batik_e2e`), jadi data dev tidak tersentuh |
+| `scripts/e2e.sh` | `up -d --build` → tunggu `/up` → build aset → `npx playwright test` |
+| `app/Console/Commands/E2eResetCommand.php` | `php artisan e2e:reset` — kosongkan 22 tabel + seed `E2ESeeder` dalam ~4 detik, dan menolak jalan kalau DB aktif bukan database E2E |
+| `database/seeders/E2ESeeder.php` | Fixture deterministik: 4 user (admin/user/shopper/payer), 3 produk, keranjang melebihi stok, 1 order lunas, 1 tagihan pending |
+| `tests/e2e/*.spec.ts` (5 file) | auth, checkout, catalog, fulfillment, payment |
+| `tests/e2e/support/*` | `helpers.ts` (login/logout dua layout, signature Midtrans), `selectors.ts` (konstanta testid), `db.ts` (reset per test) |
+
+#### Hasil per skenario
+| Skenario | Hasil |
+|---|---|
+| 1. Registrasi → sesi → logout → login | **hijau** |
+| 2. Browse + filter kategori + keranjang + checkout | **hijau** |
+| 3. Checkout stok habis → pesan `errors.stock` tampil | **hijau** |
+| 4. Klik Bayar Sekarang (Snap di-stub) + webhook Midtrans disimulasikan → status lunas | **hijau** |
+| 5. Admin ubah fulfillment + resi → user melihat di `/pembayaran` | **hijau** |
+| 6. Admin buat produk → muncul di filter kategori user | **hijau** |
+| 7. Search global → hasil relevan | **hijau** |
+| (tambahan) Login akun hasil seed | **hijau** |
+
+Total: **8 passed** saat fase ini; ditambah 1 skenario (2b) pada sesi lanjutan → **9 passed** overall.
+
+#### Bug produksi yang ditemukan oleh E2E (semua sudah diperbaiki di sesi ini)
+
+1. **🔴 Webhook Midtrans membalas 419 — pembayaran tidak pernah terkonfirmasi di produksi.**
+   Route `POST /midtrans/webhook` berada di middleware group `web` tanpa pengecualian CSRF, sedangkan
+   Midtrans mengirim notifikasi dari server mereka tanpa token CSRF. Test suite Pest **tidak pernah
+   bisa menangkap ini** karena `VerifyCsrfToken` otomatis dilewati saat `runningUnitTests()` — dan
+   `WebhookTest` jelas hijau. Fix: `$middleware->validateCsrfTokens(except: ['midtrans/webhook'])` di
+   `bootstrap/app.php`; keamanan tetap dijaga signature Midtrans di `PaymentWebhookService::verifySignature()`.
+   Ini yang pertama kali membuat skenario 4 bisa melewati tahap webhook sama sekali.
+2. **🔴 Halaman admin (Produk/Pesanan/Pelanggan) reload tanpa henti sejak dibuka.**
+   `resources/js/hooks/useTableFilters.js` memakai **satu** `ref` untuk dua `useEffect`. Effect
+   `search` (dideklarasikan lebih dulu) men-set ref itu jadi `false`, lalu effect `sort/direction`
+   langsung menganggap ini bukan render pertama dan memanggil `router.reload()`. Karena Inertia
+   me-remount komponen halaman pada setiap visit, ref ter-reset lagi → reload lagi → loop.
+   Terukur: **18 request ke `/admin/products` dalam 5 detik** (setelah fix: 1). Gejalanya di E2E:
+   modal produk admin tidak pernah selesai dimuat sehingga test tidak bisa mengisinya.
+   Fix: dua ref terpisah (`firstSearch`, `firstSort`).
+3. **🟠 Notifikasi toast di halaman admin tidak pernah tampil.** `Toaster` hanya di-mount di
+   `WelcomeLayout`; seluruh halaman admin memakai `AdminLayout`. Padahal hampir semua aksi admin
+   memanggil `toast.success`/`toast.error` (simpan produk, update status kirim, bulk action) —
+   hasilnya selalu sunyi, admin tidak pernah tahu aksi berhasil atau gagal.
+   Fix: mount `<Toaster />` di `AdminLayout`.
+4. **🟠 Pesan error stok tidak pernah sampai ke user.** `bootstrap/app.php` mengirim `errors.stock`,
+   tapi `Checkout.jsx` hanya membaca `errors?.message` → user hanya melihat "Gagal memproses checkout."
+   tanpa penjelasan stok. Fix: baca `errors.stock ?? errors.message`. (Inilah alasan skenario 3
+   masih hijau di Fase A.5: saat itu yang diverifikasi adalah backend + test, bukan layer UI-nya.)
+5. **🟠 Client key Midtrans tidak pernah terkirim ke frontend.** `Payment.jsx` membaca
+   `import.meta.env.VITE_MIDTRANS_CLIENT_KEY`, sedangkan `.env.example` hanya punya
+   `MIDTRANS_CLIENT_KEY` (tanpa prefiks `VITE_`) → `data-client-key` bernilai `"undefined"` dan popup
+   Snap tidak akan pernah muncul. Fix: `VITE_MIDTRANS_CLIENT_KEY` ditambahkan ke `.env.example`.
+
+#### Temuan lain (belum diperbaiki, di luar scope Fase C — dicatat untuk sesi berikutnya)
+
+- **~~🔴 Alur pembayaran tidak punya tombol di UI.~~ → SUDAH DIPERBAIKI (sesi lanjutan).** Kartu
+  "Pesanan Belum Dibayar" + tombol `POST /payment` ditambahkan di `Payment.jsx`, `PaymentController::index`
+  mengirim `unpaidOrder`, dan `store()` dipindah pemanggilan Midtrans ke luar transaksi DB supaya tidak
+  ada payment yatim. Lihat §10 dokumen `planning-fase-c-playwright-e2e-2026-08-22.md`.
+- **~~🟠 `payment_details` tidak pernah diisi.~~ → SUDAH DIPERBAIKI.** `PaymentController::store` kini
+  menyalin `order_details` ke `payment_details`. Bonus: `Payment.jsx` menulis `item.price` padahal
+  kolomnya `harga` — akan tampil "Rp NaN" begitu rincian item terisi.
+- **🟠 Redirect setelah simpan produk (belum diperbaiki).** `ProductController::store` mengarahkan
+  admin ke `admin.dashboard`, bukan kembali ke daftar produk, padahal aksi itu dilakukan dari
+  `/admin/products`.
+
+#### Catatan teknis yang sudah diverifikasi
+- **Reset database**: `migrate:fresh --seed` butuh **~105 detik** (migrasi penuh) sehingga selalu
+  memakan timeout per-test Playwright. Karena itu dibuat `php artisan e2e:reset` (DELETE per tabel +
+  seed) yang selesai dalam **~4 detik**. `TRUNCATE` sempat dicoba dan justru **100 detik** untuk 22
+  tabel di lingkungan virtual/container ini, jadi `DELETE FROM` yang dipakai.
+- **`role` tidak bisa di-mass-assign di seeder.** `User::$fillable` sengaja tidak memuat `role`
+  (kebijakan Fase A.1). `E2ESeeder` karena itu memasang `role` lewat property assignment lalu `save()`,
+  pola yang sama dipakai `RegisteredUserController` — hasilnya tidak bergantung pada apakah seeder
+  dipanggil lewat `db:seed` (yang aktif dalam keadaan unguarded) atau dipanggil langsung.
+- **CSRF webhook tidak bisa diuji lewat Pest.** Karena token otomatis dilewati saat
+  `runningUnitTests()`, verifikasi 419 ini hanya bisa dilakukan lewat E2E — inilah sebabnya
+  skenario 4 punya nilai sebagai test, bukan sekadar formalitas.
+
+### Verifikasi Fase C (final)
+- `npx playwright test` → **9 passed (2.2 menit)**.
+- `php artisan test` → **173 passed (704 assertions)** — nol regresi dari seluruh perubahan JSX,
+  `bootstrap/app.php`, command baru, seeder baru, dan perbaikan alur pembayaran.
+- `tests/Feature/PaymentInitiationTest.php` → 8 test baru untuk alur `POST /payment` (payment,
+  `payment_details`, idempoten, gagal tanpa payment yatim, isolasi user).
+- `npm run build` → sukses.
+- Trace & screenshot on-failure aktif (`test-results/`, `playwright-report/` sudah di-`.gitignore`).
 
 ---
 
@@ -225,7 +312,7 @@ Jalan di setiap push & pull request ke branch utama. Ini akan menangkap regresi 
 - [x] **Fase A.5** — index gabungan `(product_id, size)` + retry deadlock di `CheckoutService`, terverifikasi lewat race-condition test ulang.
 - [x] **Fase B** - 14 file test baru untuk fitur Tahap 2–4. — **14/14 selesai & hijau (165/165, 644 assertions: 57 lama +108 baru)** — Batch 1: Wishlist, Search, OrderTracking, Invoice (29 test) | Batch 2: Notification, AdminNotification, Banner, Fulfillment (26 test) | Batch 3: UserBulk, OrderBulk, ProductBulk (29 test) | Batch 4: OrderExport, PdfExport, Analytics (24 test).
 - [x] **Fase B** - full suite hijau — **165 passed (644 assertions), zero regression, build sukses**.
-- [ ] **Fase C** - setup Playwright + 7 skenario E2E.
+- [x] **Fase C** - setup Playwright + 7 skenario E2E. — **SELESAI & hijau: 8/8 test (7 skenario + 1 login tambahan), stack Docker Compose + DB E2E terpisah. Menemukan 2 bug P0 (webhook Midtrans 419, loop reload halaman admin) + 3 bug P1 yang semuanya sudah diperbaiki — rinciannya di `docs/planning-fase-c-playwright-e2e-2026-08-22.md`.**
 - [ ] **Fase D** - GitHub Actions CI (pest + build, lalu + playwright).
 
 ---
