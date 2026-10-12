@@ -29,13 +29,20 @@ class PaymentWebhookService
             abort(403, 'Invalid signature');
         }
 
-        $payment = Payment::where('transaction_id', $payload['order_id'])->firstOrFail();
+        // Pembacaan payment, pengecekan status terminal, dan perubahan statusnya
+        // terjadi DALAM satu transaksi dengan baris payment dikunci (lockForUpdate).
+        // Sebelumnya payment dibaca sebelum transaksi, sehingga dua notifikasi
+        // gagal yang tiba bersamaan bisa sama-sama melihat status 'pending' dan
+        // sama-sama mengembalikan stok — stok naik dua kali.
+        $processed = DB::transaction(function () use ($payload) {
+            $payment = Payment::where('transaction_id', $payload['order_id'])
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if (in_array($payment->status, ['success', 'failed'])) {
-            return;
-        }
+            if (in_array($payment->status, ['success', 'failed'])) {
+                return false;
+            }
 
-        DB::transaction(function () use ($payment, $payload) {
             $status = $payload['transaction_status'];
 
             if (in_array($status, ['capture', 'settlement', 'success'])) {
@@ -79,11 +86,21 @@ class PaymentWebhookService
                 }
 
                 foreach ($payment->order?->details ?? [] as $detail) {
-                    if ($detail->product_size_id) {
+                    if ($detail->product_variant_id) {
+                        $this->inventoryManager->restoreVariant($detail->product_variant_id, $detail->quantity, "payment.{$status}");
+                    } elseif ($detail->product_size_id) {
                         $this->inventoryManager->restore($detail->product_size_id, $detail->quantity, "payment.{$status}");
                     }
                 }
             }
+
+            return true;
         });
+
+        if (! $processed) {
+            Log::info('Ignored Midtrans webhook for already-settled payment', [
+                'order_id' => $payload['order_id'] ?? null,
+            ]);
+        }
     }
 }

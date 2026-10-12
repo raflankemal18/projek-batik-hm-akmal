@@ -9,10 +9,11 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'category', 'description', 'harga'];
+    protected $fillable = ['name', 'category', 'description', 'harga', 'has_variants'];
 
     protected $casts = [
         'harga' => 'decimal:2',
+        'has_variants' => 'boolean',
     ];
 
     public function sizes()
@@ -23,6 +24,17 @@ class Product extends Model
     public function images()
     {
         return $this->hasMany(ProductImage::class, 'product_id', 'id');
+    }
+
+    /** Motif kain. Hanya relevan untuk produk dengan has_variants = true. */
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class, 'product_id', 'id');
+    }
+
+    public function activeVariants()
+    {
+        return $this->variants()->where('is_active', true);
     }
 
     public function details()

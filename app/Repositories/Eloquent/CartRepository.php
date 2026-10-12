@@ -21,7 +21,7 @@ class CartRepository extends BaseRepository implements CartRepositoryInterface
     public function getWithDetails(int $userId)
     {
         return $this->query()
-            ->with(['details.product.images', 'user'])
+            ->with(['details.product.images', 'details.variant', 'user'])
             ->where('user_id', $userId)
             ->first();
     }
@@ -46,6 +46,17 @@ class CartRepository extends BaseRepository implements CartRepositoryInterface
             ->where('product_id', $productId)
             ->where('size', $size)
             ->first();
+    }
+
+    public function findDetailForVariant(int $cartId, int $productId, ?int $productVariantId): ?CartDetail
+    {
+        // Identitas baris = produk + variasi. Dua motif berbeda dari produk yang
+        // sama TIDAK digabung; motif yang sama menambah kuantitas barisnya.
+        $query = CartDetail::where('cart_id', $cartId)->where('product_id', $productId);
+
+        return $productVariantId === null
+            ? $query->whereNull('product_variant_id')->first()
+            : $query->where('product_variant_id', $productVariantId)->first();
     }
 
     public function findDetailOwned(int $cartDetailId, int $userId): CartDetail

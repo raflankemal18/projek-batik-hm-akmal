@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Contracts\Repositories\CartRepositoryInterface;
 use App\Contracts\Repositories\OrderRepositoryInterface;
 use App\Contracts\Repositories\ProductSizeRepositoryInterface;
+use App\Contracts\Repositories\ProductVariantRepositoryInterface;
 use App\Exceptions\EmptyCartException;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -17,12 +19,13 @@ class CheckoutService
         private OrderRepositoryInterface $orderRepository,
         private CartRepositoryInterface $cartRepository,
         private ProductSizeRepositoryInterface $productSizeRepository,
+        private ProductVariantRepositoryInterface $productVariantRepository,
         private InventoryManager $inventoryManager,
     ) {}
 
     public function createDraftOrder(array $checkoutData, User $user): Order
     {
-        // $attempts=3: two concurrent checkouts locking the same ProductSize
+        // $attempts=3: dua concurrent checkouts locking the same ProductSize
         // row can trigger an InnoDB deadlock (SQLSTATE 40001) even though
         // only one of them should legitimately win — Laravel retries the
         // whole transaction automatically instead of surfacing a raw 500.
@@ -43,34 +46,14 @@ class CheckoutService
             $orderDetails = [];
 
             foreach ($cart->details as $detail) {
-                $productSize = $this->productSizeRepository->findByProductAndSizeForUpdate($detail->product_id, $detail->size);
-
-                if (! $productSize || $productSize->stock < $detail->quantity) {
-                    throw new InsufficientStockException(
-                        "Stok tidak cukup untuk {$detail->product->name} size {$detail->size}",
-                        [
-                            'product_id' => $detail->product_id,
-                            'size' => $detail->size,
-                            'requested_qty' => $detail->quantity,
-                            'available' => $productSize->stock ?? 0,
-                        ]
-                    );
+                if ($detail->product_variant_id) {
+                    $prepared = $this->prepareVariantDetail($detail);
+                } else {
+                    $prepared = $this->prepareSizeDetail($detail);
                 }
 
-                $harga = $detail->product->harga;
-                $subtotal = $harga * $detail->quantity;
-                $totalHarga += $subtotal;
-
-                $this->inventoryManager->decrement($productSize->id, $detail->quantity);
-
-                $orderDetails[] = [
-                    'product_id' => $detail->product_id,
-                    'product_size_id' => $productSize->id,
-                    'size' => $detail->size,
-                    'quantity' => $detail->quantity,
-                    'harga' => $harga,
-                    'subtotal' => $subtotal,
-                ];
+                $totalHarga += $prepared['subtotal'];
+                $orderDetails[] = $prepared;
             }
 
             $order = $this->orderRepository->create([
@@ -86,6 +69,8 @@ class CheckoutService
             ]);
 
             foreach ($orderDetails as $detail) {
+                // 'subtotal' hanya untuk perhitungan di atas; kolomnya tidak ada
+                // di order_details dan sengaja tidak dibuat fillable.
                 $this->orderRepository->addDetail($order->id, array_diff_key($detail, ['subtotal' => null]));
             }
 
@@ -93,6 +78,8 @@ class CheckoutService
                 'order_id' => $order->id,
                 'items' => array_map(fn ($d) => [
                     'product_id' => $d['product_id'],
+                    'product_variant_id' => $d['product_variant_id'] ?? null,
+                    'motif_name' => $d['motif_name'] ?? null,
                     'size' => $d['size'],
                     'qty' => $d['quantity'],
                     'harga' => $d['harga'],
@@ -106,5 +93,112 @@ class CheckoutService
 
             return $order;
         }, 3);
+    }
+
+    /**
+     * Baris keranjang dengan motif: harga & stok milik variasi, dan nama motif
+     * ikut disimpan sebagai snapshot supaya order lama tetap terbaca walaupun
+     * motif di katalog nanti diganti nama atau dihapus.
+     */
+    private function prepareVariantDetail($detail, $lockedVariant = null): array
+    {
+        $variant = $lockedVariant ?? $this->productVariantRepository->findForUpdate($detail->product_variant_id);
+
+        if (! $variant || ! $variant->is_active) {
+            throw new InsufficientStockException(
+                'Motif sudah tidak tersedia',
+                [
+                    'product_id' => $detail->product_id,
+                    'product_variant_id' => $detail->product_variant_id,
+                    'requested_qty' => $detail->quantity,
+                    'available' => 0,
+                ]
+            );
+        }
+
+        if ($variant->stock < $detail->quantity) {
+            throw new InsufficientStockException(
+                "Stok tidak cukup untuk {$detail->product->name} motif {$variant->name}",
+                [
+                    'product_id' => $detail->product_id,
+                    'product_variant_id' => $variant->id,
+                    'motif_name' => $variant->name,
+                    'requested_qty' => $detail->quantity,
+                    'available' => $variant->stock,
+                ]
+            );
+        }
+
+        $harga = (float) $variant->price;
+
+        $this->inventoryManager->decrementVariant($variant->id, $detail->quantity);
+
+        return [
+            'product_id' => $detail->product_id,
+            'product_variant_id' => $variant->id,
+            'motif_name' => $variant->name,
+            'size' => $variant->name,
+            'quantity' => $detail->quantity,
+            'harga' => $harga,
+            'subtotal' => $harga * $detail->quantity,
+        ];
+    }
+
+    /**
+     * Baris keranjang produk lama. Kalau produknya meantime sudah bermotif
+     * (mis. setelah command migrasi), baris tanpa product_variant_id
+     * dipetakan ke motif bernama sama supaya stok yang dikurangi tetap satu
+     * sumber; kalau motifnya tidak ada, checkout ditolak dengan pesan jelas
+     * alih-alih diam-diam mengurangi stok products_sizes yang sudah tidak
+     * dipakai pembeli.
+     */
+    private function prepareSizeDetail($detail): array
+    {
+        $product = Product::find($detail->product_id);
+
+        if ($product?->has_variants) {
+            $variant = $this->productVariantRepository->findActiveByName($product->id, (string) $detail->size);
+
+            if (! $variant) {
+                throw new InsufficientStockException(
+                    "Motif untuk {$product->name} tidak tersedia lagi, silakan pilih ulang motifnya",
+                    [
+                        'product_id' => $detail->product_id,
+                        'requested_size' => $detail->size,
+                        'requested_qty' => $detail->quantity,
+                        'available' => 0,
+                    ]
+                );
+            }
+
+            return $this->prepareVariantDetail($detail, $variant);
+        }
+
+        $productSize = $this->productSizeRepository->findByProductAndSizeForUpdate($detail->product_id, $detail->size);
+
+        if (! $productSize || $productSize->stock < $detail->quantity) {
+            throw new InsufficientStockException(
+                "Stok tidak cukup untuk {$detail->product->name} size {$detail->size}",
+                [
+                    'product_id' => $detail->product_id,
+                    'size' => $detail->size,
+                    'requested_qty' => $detail->quantity,
+                    'available' => $productSize->stock ?? 0,
+                ]
+            );
+        }
+
+        $harga = (float) $detail->product->harga;
+
+        $this->inventoryManager->decrement($productSize->id, $detail->quantity);
+
+        return [
+            'product_id' => $detail->product_id,
+            'product_size_id' => $productSize->id,
+            'size' => $detail->size,
+            'quantity' => $detail->quantity,
+            'harga' => $harga,
+            'subtotal' => $harga * $detail->quantity,
+        ];
     }
 }

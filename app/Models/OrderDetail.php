@@ -9,7 +9,10 @@ class OrderDetail extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'product_id', 'product_size_id', 'size', 'quantity', 'harga'];
+    protected $fillable = [
+        'order_id', 'product_id', 'product_size_id', 'product_variant_id',
+        'motif_name', 'size', 'quantity', 'harga',
+    ];
 
     protected $casts = [
         'harga' => 'decimal:2',
@@ -23,5 +26,11 @@ class OrderDetail extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'id');
+    }
+
+    /** Motif yang dibeli; null untuk order lama. */
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id', 'id');
     }
 }

@@ -12,7 +12,7 @@ class SearchController extends Controller
     {
         $query = $request->query("q");
 
-        $products = Product::with(["sizes", "images"])
+        $products = Product::with(["sizes", "images", "activeVariants"])
             ->when($query, function ($q) use ($query) {
                 return $q->where("name", "like", "%{$query}%")
                          ->orWhere("description", "like", "%{$query}%");

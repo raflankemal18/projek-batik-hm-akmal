@@ -14,6 +14,9 @@ interface CartRepositoryInterface
 
     public function findDetailForProduct(int $cartId, int $productId, string $size);
 
+    /** Baris keranjang untuk satu motif tertentu (produk + variasi). */
+    public function findDetailForVariant(int $cartId, int $productId, ?int $productVariantId);
+
     public function findDetailOwned(int $cartDetailId, int $userId);
 
     public function updateDetail(int $cartDetailId, array $data);

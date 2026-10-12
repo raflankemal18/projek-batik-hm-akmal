@@ -45,7 +45,7 @@ class HomeController extends Controller
     {
         $product = $this->productService->findWithRelations($id);
 
-        $related = Product::with(['sizes', 'images' => fn ($q) => $q->limit(1)])
+        $related = Product::with(['sizes', 'images' => fn ($q) => $q->limit(1), 'activeVariants'])
             ->when($product->category, fn ($q) => $q->where('category', $product->category))
             ->where('id', '!=', $product->id)
             ->inRandomOrder()
@@ -53,7 +53,7 @@ class HomeController extends Controller
             ->get();
 
         if ($related->count() < 4) {
-            $extra = Product::with(['sizes', 'images' => fn ($q) => $q->limit(1)])
+            $extra = Product::with(['sizes', 'images' => fn ($q) => $q->limit(1), 'activeVariants'])
                 ->where('id', '!=', $product->id)
                 ->whereNotIn('id', $related->pluck('id'))
                 ->inRandomOrder()

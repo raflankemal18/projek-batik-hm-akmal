@@ -213,7 +213,7 @@ Keputusan yang dikunci bersama user sebelum eksekusi: skenario 4 memakai **simul
 | 7. Search global → hasil relevan | **hijau** |
 | (tambahan) Login akun hasil seed | **hijau** |
 
-Total: **8 passed** saat fase ini; ditambah 1 skenario (2b) pada sesi lanjutan → **9 passed** overall.
+Total: **8 passed** saat fase ini; ditambah 1 skenario (2b, initiate pembayaran) pada sesi lanjutan → **9 passed** overall.
 
 #### Bug produksi yang ditemukan oleh E2E (semua sudah diperbaiki di sesi ini)
 
@@ -312,7 +312,7 @@ Jalan di setiap push & pull request ke branch utama. Ini akan menangkap regresi 
 - [x] **Fase A.5** — index gabungan `(product_id, size)` + retry deadlock di `CheckoutService`, terverifikasi lewat race-condition test ulang.
 - [x] **Fase B** - 14 file test baru untuk fitur Tahap 2–4. — **14/14 selesai & hijau (165/165, 644 assertions: 57 lama +108 baru)** — Batch 1: Wishlist, Search, OrderTracking, Invoice (29 test) | Batch 2: Notification, AdminNotification, Banner, Fulfillment (26 test) | Batch 3: UserBulk, OrderBulk, ProductBulk (29 test) | Batch 4: OrderExport, PdfExport, Analytics (24 test).
 - [x] **Fase B** - full suite hijau — **165 passed (644 assertions), zero regression, build sukses**.
-- [x] **Fase C** - setup Playwright + 7 skenario E2E. — **SELESAI & hijau: 8/8 test (7 skenario + 1 login tambahan), stack Docker Compose + DB E2E terpisah. Menemukan 2 bug P0 (webhook Midtrans 419, loop reload halaman admin) + 3 bug P1 yang semuanya sudah diperbaiki — rinciannya di `docs/planning-fase-c-playwright-e2e-2026-08-22.md`.**
+- [x] **Fase C** - setup Playwright + 7 skenario E2E. — **SELESAI & hijau: 9/9 test (7 skenario + login tambahan + skenario initiate pembayaran), stack Docker Compose + DB E2E terpisah. Menemukan 2 bug P0 (webhook Midtrans 419, loop reload halaman admin) + 3 bug P1 yang semuanya sudah diperbaiki — rinciannya di `docs/planning-fase-c-playwright-e2e-2026-08-22.md`.**
 - [ ] **Fase D** - GitHub Actions CI (pest + build, lalu + playwright).
 
 ---

@@ -114,6 +114,11 @@ class PaymentController extends Controller
                 PaymentDetail::create([
                     'payment_id' => $payment->id,
                     'product_id' => $detail->product_id,
+                    // motif_name disimpan sebagai snapshot: kalau motif di katalog
+                    // diganti nama atau dihapus, invoice lama tetap menampilkan
+                    // motif yang benar-benar dibeli.
+                    'product_variant_id' => $detail->product_variant_id,
+                    'motif_name' => $detail->motif_name,
                     'name' => $order->name,
                     'email' => $order->email,
                     'phone' => $order->phone,

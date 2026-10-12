@@ -43,6 +43,9 @@ Route::middleware('auth', 'role:admin')->group(function () {
     Route::put('/admin/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
     Route::delete('/admin/products/bulk', [ProductController::class, 'bulkDelete'])->name('admin.products.bulk_destroy');
     Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
+    Route::post('/admin/products/{product}/variants', [\App\Http\Controllers\Admin\ProductVariantController::class, 'store'])->name('admin.products.variants.store');
+    Route::put('/admin/products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductVariantController::class, 'update'])->name('admin.products.variants.update');
+    Route::delete('/admin/products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductVariantController::class, 'destroy'])->name('admin.products.variants.destroy');
     Route::delete('/admin/users/bulk', [UserController::class, 'bulkDelete'])->name('admin.users.bulk_destroy');
     Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     Route::patch('/admin/orders/{order}/fulfillment', [AdminDashboardController::class, 'updateFulfillment'])->name('admin.orders.fulfillment');

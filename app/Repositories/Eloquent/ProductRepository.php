@@ -22,6 +22,12 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             ->with([
                 'sizes',
                 'images' => fn ($q) => $q->limit(1),
+                // Motif aktif ikut dimuat karena kartu katalog perlu menampilkan
+                // jumlah motif / harga mulai dari. PENTING: hanya yang aktif —
+                // motif nonaktif tidak boleh bocor ke halaman publik. Relasi ini
+                // harus eager-load di SETIAP sumber kartu produk, karena
+                // Model::preventLazyLoading aktif di luar production.
+                'activeVariants',
             ])
             ->select(['id', 'name', 'category', 'harga', 'description', 'created_at', 'updated_at']);
 

@@ -28,7 +28,11 @@ class ReleaseExpiredOrders extends Command
 
             foreach ($expired as $order) {
                 foreach ($order->details as $detail) {
-                    if ($detail->product_size_id) {
+                    // Order motif mengembalikan stok ke baris variasinya; order
+                    // lama memakai products_sizes.
+                    if ($detail->product_variant_id) {
+                        $this->inventoryManager->restoreVariant($detail->product_variant_id, $detail->quantity, 'draft_expired');
+                    } elseif ($detail->product_size_id) {
                         $this->inventoryManager->restore($detail->product_size_id, $detail->quantity, 'draft_expired');
                     }
                 }
