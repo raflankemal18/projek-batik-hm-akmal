@@ -1,96 +1,72 @@
-# Hasil Audit — Planning Variasi Motif sampai P8
+# Audit Planning Variasi Motif sampai P8
 
-**Tanggal:** 2026-10-13  
+**Tanggal audit awal:** 2026-10-13  
+**Tindak lanjut:** setelah commit `b60639b`  
 **Branch:** `dev`  
-**Dokumen yang diaudit:** [planning-variasi-motif-batik.md](./planning-variasi-motif-batik.md)  
-**Cakupan:** P0–P8, klaim hasil verifikasi, perubahan implementasi terkait, dan konsistensi rencana. P9 dinilai hanya sebagai pekerjaan tersisa, bukan diaudit sebagai implementasi.
+**Dokumen utama:** [planning-variasi-motif-batik.md](./planning-variasi-motif-batik.md)
 
-## Ringkasan
+## Kesimpulan tindak lanjut
 
-P1–P8 telah menghasilkan implementasi substansial: backend variasi, migrasi data lama, administrasi motif, katalog/detail pembeli, tampilan pesanan, feature tests, dan skenario E2E. Perbaikan audit sebelumnya juga terlihat pada kode.
+Temuan utama audit awal sudah ditangani di commit `b60639b`:
 
-Namun, **saya belum dapat mengonfirmasi bahwa P0–P8 sepenuhnya lulus saat ini**. Ada satu masalah data transaksi yang secara eksplisit masih terbuka: menghapus produk menghapus rincian item pada order. Selain itu, admin dapat mematikan mode variasi meski variasi masih ada, beberapa bagian dokumen masih menyatakan P5/P6 belum dikerjakan, dan verifikasi build/test yang diklaim di dokumen tidak dapat diulang pada workspace ini.
+1. Produk kini diarsipkan dengan soft delete, bukan dihapus permanen, sehingga rincian order/payment tetap punya referensi produk.
+2. Produk terarsip tidak tampil di katalog dan tidak dapat dibeli lagi; admin dapat melihat halaman arsip dan memulihkan produk.
+3. Request update menolak mematikan `has_variants` selama produk masih memiliki variasi, termasuk variasi nonaktif.
+4. Bagian status, langkah berikutnya, dan tautan audit di planning sudah diperbarui.
+5. Dependensi `react-is` sudah dideklarasikan sehingga build frontend bisa berjalan.
 
-**Kesimpulan audit:** status “P0–P8 selesai secara implementasi” masuk akal sebagai catatan pekerjaan, tetapi **belum layak dibaca sebagai “seluruh kriteria selesai dan terverifikasi tanpa temuan terbuka”**. P9 masih menunggu seed konten dan smoke final. Sebelum rilis, putuskan penanganan penghapusan produk dan lindungi transisi mode variasi.
+Saya menjalankan ulang pengujian yang langsung mencakup temuan utama. **15 test lulus dengan 118 assertions**, termasuk arsip/pemulihan produk, invoice setelah produk diarsipkan, larangan mematikan mode variasi, dan regression test stok motif. **Production build berhasil.**
 
-## Temuan
+Dengan hasil itu, **temuan audit #1 dan #2 tertutup untuk perilaku yang diuji**. Klaim bahwa seluruh matriks P0–P8 sudah hijau tidak saya verifikasi ulang secara penuh pada tindak lanjut ini: Playwright keseluruhan dan skrip race stok tidak dijalankan. Skrip race berpotensi mereset database E2E, sehingga perlu dijalankan hanya setelah target database/environment dipastikan aman.
 
-| # | Prioritas | Temuan | Dampak |
+## Temuan audit awal dan hasil perbaikan
+
+| # | Prioritas awal | Temuan awal | Status tindak lanjut |
 |---|---|---|---|
-| 1 | **Tinggi** | Hard-delete produk menghapus baris rincian order; test P8 membuktikan dan mengharapkan penghapusan itu. | Riwayat transaksi kehilangan rincian barang yang dibeli; bertentangan dengan kriteria data transaksi tetap. |
-| 2 | **Sedang** | Admin dapat mematikan `has_variants` tanpa menonaktifkan/menghapus variasi aktif. | Produk dapat beralih ke UI dan sumber stok ukuran sementara variasi masih aktif/tersimpan. |
-| 3 | **Sedang** | Dokumen menyebut P0–P8 selesai, tetapi beberapa bagian lama masih menyebut UI belum ada dan menyarankan mulai P5/P6. | Status dan instruksi implementasi saling bertentangan. |
-| 4 | **Sedang** | Klaim 228 Pest / 12 Playwright / build / race check tidak dapat direproduksi di workspace saat audit. Build saat ini gagal karena `react-is` tidak ditemukan. | Status hijau yang tercatat belum dikonfirmasi terhadap working tree sekarang. |
-| 5 | **Rendah** | Link laporan audit sebelumnya di planning memakai nama file yang tidak cocok dengan file audit yang ada. | Pembaca tidak dapat membuka sumber audit melalui tautan dokumen. |
+| 1 | Tinggi | Hard-delete produk dapat menghapus rincian order karena cascade pada foreign key. | **Diperbaiki dan diuji.** Produk memakai soft delete/arsip, relasi order/payment memuat produk terarsip, dan test memastikan invoice serta detail transaksi masih terbaca. |
+| 2 | Sedang | Admin dapat mematikan `has_variants` saat variasi masih tersimpan. | **Diperbaiki dan diuji.** `UpdateProductRequest` menolak perubahan tersebut untuk variasi aktif maupun nonaktif; test juga memastikan produk bermotif tetap dapat diedit selama mode tidak dimatikan. |
+| 3 | Sedang | Status P5–P8 dan langkah berikutnya bertentangan dalam planning. | **Diperbaiki di dokumen.** Planning menandai status lama sebagai kondisi pada saat perencanaan, menyatakan P5–P8 selesai, dan membatasi pekerjaan tersisa ke P9. |
+| 4 | Sedang | Build/test yang dicatat pada planning tidak dapat direproduksi di audit awal. | **Sebagian diverifikasi ulang.** Build sukses dan suite terfokus lulus. Full Playwright/race tidak dijalankan pada tindak lanjut ini; hasil penuh yang dicatat planning tetap merupakan klaim dokumen, bukan hasil run baru ini. |
+| 5 | Rendah | Tautan laporan audit sebelumnya menunjuk nama file yang salah. | **Diperbaiki di dokumen.** Tautan planning sekarang menunjuk `audit-update-planning-variasi-motif-batik.md`. |
 
-### 1. Penghapusan produk menghilangkan rincian item order
+## Perubahan implementasi yang ditinjau
 
-P8 sendiri mencatat bahwa `ProductController::destroy()` melakukan hard delete. Foreign key `order_details.product_id` menggunakan cascade ke tabel produk. Test “histori order tetap terbaca setelah produk dihapus” kemudian secara eksplisit mengharapkan `OrderDetail`-nya **tidak ada** setelah penghapusan; order dan totalnya tetap ada, tetapi itemnya hilang. Lihat [ProductVariantStockTest.php](../tests/Feature/ProductVariantStockTest.php) dan [ProductController.php](../app/Http/Controllers/ProductController.php).
+- [Product.php](../app/Models/Product.php) menggunakan `SoftDeletes`.
+- [2026_08_13_000003_add_deleted_at_to_products.php](../database/migrations/2026_08_13_000003_add_deleted_at_to_products.php) menambah kolom `deleted_at`.
+- [ProductService.php](../app/Services/ProductService.php) mengarsipkan produk dan menyediakan pemulihan.
+- [ProductController.php](../app/Http/Controllers/ProductController.php) menyediakan daftar arsip dan endpoint restore yang dibatasi untuk admin.
+- [OrderDetail.php](../app/Models/OrderDetail.php) dan [PaymentDetail.php](../app/Models/PaymentDetail.php) memakai `withTrashed()` pada relasi produk agar transaksi lama tetap menampilkan produk.
+- [UpdateProductRequest.php](../app/Http/Requests/Admin/Product/UpdateProductRequest.php) memvalidasi larangan mematikan mode motif selama variasi masih ada.
+- [ProductModeAndArchiveTest.php](../tests/Feature/Admin/ProductModeAndArchiveTest.php) dan [ProductVariantStockTest.php](../tests/Feature/ProductVariantStockTest.php) mencakup perilaku tersebut.
 
-Ini bukan sekadar skenario hipotetis: test mengabadikan perilaku kehilangan rincian tersebut. Perilaku itu bertentangan dengan kriteria di planning bahwa data transaksi tidak berubah ketika data katalog diubah/dihapus. Catatan P8 telah jujur menyebutnya sebagai temuan terbuka, tetapi status keseluruhan P0–P8 “selesai & terverifikasi” sebaiknya tidak mengaburkan temuan ini.
+## Verifikasi yang dijalankan pada tindak lanjut
 
-**Tindak lanjut:** putuskan aturan toko, lalu implementasikan salah satu kebijakan sebelum menganggap kriteria histori terpenuhi:
+Perintah test menggunakan container aplikasi dan konfigurasi PHPUnit yang menunjuk database `marketplace_batik_test`:
 
-- larang penghapusan produk yang pernah dipakai transaksi dan sediakan aksi arsip/nonaktif; atau
-- gunakan soft delete dan pastikan relasi/riwayat dapat tetap memuat produk terhapus; atau
-- simpan snapshot item transaksi yang cukup agar invoice/order tetap utuh tanpa bergantung pada produk katalog.
+```text
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml exec -T app \
+  php artisan test tests/Feature/Admin/ProductModeAndArchiveTest.php \
+  tests/Feature/ProductVariantStockTest.php
+```
 
-Tambahkan test yang mengharapkan rincian order dan invoice tetap dapat dibaca setelah tindakan katalog yang diizinkan. Test saat ini justru mengunci keadaan kehilangan detail sebagai hasil yang diharapkan.
+Hasil: **15 passed, 118 assertions**.
 
-### 2. Mode variasi dapat dimatikan sementara variasi masih aktif
+Build:
 
-Checkbox “Produk memakai pilihan motif” pada modal admin selalu dapat diubah ([Modal.jsx](../resources/js/Pages/admin/form/modal/Modal.jsx)). Request menerima `has_variants` sebagai boolean/null ([UpdateProductRequest.php](../app/Http/Requests/Admin/Product/UpdateProductRequest.php)), lalu [ProductService.php](../app/Services/ProductService.php) menyimpan nilai itu langsung. Jika nilainya `false`, service menjalankan sinkronisasi `products_sizes`, tetapi tidak menonaktifkan atau menghapus variasi aktif.
+```text
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml exec -T app npm run build
+```
 
-Akibatnya, produk masih menyimpan variasi yang dapat diakses lewat backend, tetapi katalog menganggap produk bukan produk bermotif dan menggunakan ukuran lama. Untuk produk hasil migrasi, ini juga dapat mengalihkan jalur pembelian dari stok variasi ke `products_sizes`, sehingga pemisahan dua sumber stok yang sebelumnya diperbaiki dapat muncul kembali setelah perubahan admin.
+Hasil: **berhasil**. Ada peringatan non-blocking bahwa data `caniuse-lite` sudah lama.
 
-**Tindak lanjut:** cegah perubahan `has_variants: true → false` selama masih ada variasi aktif/terpakai, atau sediakan alur transisi eksplisit yang memetakan variasi, keranjang, dan stok dengan aman. Tambahkan test untuk produk yang sudah punya variasi aktif dan histori order.
+Tidak dijalankan pada tindak lanjut: full `php artisan test`, Playwright, dan `scripts/race-variant-stock.sh`. Untuk verifikasi rilis, jalankan `bash scripts/verify.sh` hanya setelah memastikan stack mengarah ke database E2E yang aman untuk di-reset.
 
-### 3. Status P5/P6 dan langkah berikutnya tidak konsisten
+## Sisa sebelum rilis
 
-Bagian awal masih menyatakan UI admin/pembeli belum ada, dan bagian “Yang tersisa (P5–P9)” masih mencantumkan UI yang sekarang ditandai selesai. Bagian “Langkah berikutnya” juga masih menyarankan mulai P5, lalu P6/P7/P8, meski judul-judul tersebut kini sudah ditandai selesai. Lihat [planning-variasi-motif-batik.md](./planning-variasi-motif-batik.md).
+1. Kerjakan P9: masukkan nama motif, harga, stok, cover, dan foto yang sudah disetujui pemilik toko; jangan mengarang data yang belum diberikan.
+2. Jalankan verifikasi penuh P0–P8 di lingkungan yang sudah dipastikan aman, terutama Playwright dan uji race stok.
+3. Setelah verifikasi penuh, selaraskan angka hasil aktual di planning dengan output test terbaru.
 
-**Tindak lanjut:** rapikan bagian status historis menjadi “status saat perencanaan awal” atau pindahkan ke catatan riwayat. Perbarui daftar sisa pekerjaan dan langkah berikutnya agar hanya merujuk ke P9 dan keputusan terbuka.
+## Batas
 
-### 4. Verifikasi terbaru belum dapat diulang
-
-Perencanaan mencatat:
-
-- `php artisan test`: 228 passed (1002 assertions);
-- `npx playwright test`: 12 passed;
-- `npm run build`: sukses;
-- `scripts/race-variant-stock.sh`: stok aman, satu order, tanpa HTTP 500.
-
-Pada audit ini:
-
-- `php artisan test --filter='ProductVariantTest|MigrateSizesToVariantsTest'` tidak dapat berjalan karena `vendor/autoload.php` tidak ada.
-- `npm run build` gagal saat Rollup menyelesaikan `recharts`: modul `react-is` tidak ditemukan. `npm ls react-is --depth=1` juga menunjukkan paket tersebut tidak terpasang.
-- Saya tidak menjalankan ulang Playwright atau skrip race. Test backend membutuhkan instalasi Composer; skrip race memulai dengan me-reset database E2E, sehingga tidak dijalankan tanpa memastikan lingkungan E2E yang tepat.
-- `php -l` pada file implementasi/test PHP terkait yang diperiksa lulus.
-
-Kegagalan build yang diamati **belum membuktikan** regresi dari perubahan variasi; bisa merupakan dependency yang tidak terpasang di workspace. Namun, sampai dependency dipulihkan dan build/test diulang pada working tree yang sekarang, klaim hijau hanya dapat diperlakukan sebagai hasil yang dicatat dokumen, bukan hasil audit ini.
-
-### 5. Referensi laporan audit sebelumnya salah nama
-
-Planning merujuk `docs/audit-update-planning-motif-batik.md`, sedangkan file yang tersedia adalah [audit-update-planning-variasi-motif-batik.md](./audit-update-planning-variasi-motif-batik.md). Perbaiki nama tautan di planning agar rujukan dapat dibuka.
-
-## Yang terkonfirmasi baik
-
-- Model variasi menyimpan harga, stok, foto opsional, dan status aktif secara terpisah.
-- Keranjang dan checkout mendukung ID variasi, mengunci stok variasi, menggunakan harga variasi, dan menyimpan snapshot nama motif pada order/payment detail.
-- Perbaikan jalur stok lama terlihat di `CartService` dan `CheckoutService`: produk bermotif dipetakan ke motif bernama sama dan tidak memakai `products_sizes` sebagai sumber stok untuk checkout.
-- Webhook kini memproses payment di dalam transaksi dengan `lockForUpdate()` sebelum mengecek status terminal dan memulihkan stok.
-- Relasi variasi dimuat pada query produk publik yang diperiksa, dan query admin memuat motif nonaktif untuk pengelolaan.
-- Test P5–P8 mencakup CRUD admin, pemilihan motif pembeli, snapshot transaksi, batas stok, webhook berulang, dan uji checkout konkuren melalui skrip terpisah.
-- Command migrasi menyediakan `--dry-run`, pembatas `--product`, dan konfirmasi eksplisit, sehingga lebih aman daripada migrasi massal tanpa konfirmasi.
-
-## Pekerjaan tersisa sebelum menyatakan rilis siap
-
-1. Putuskan dan perbaiki kebijakan penghapusan produk agar rincian transaksi tidak hilang.
-2. Kunci alur perubahan `has_variants` agar variasi aktif dan stok tidak terlepas dari mode katalog.
-3. Sinkronkan bagian status dan instruksi lama pada planning; betulkan link audit sebelumnya.
-4. Pulihkan dependency/build environment, lalu jalankan ulang Pest, Playwright, build, dan uji race terhadap working tree yang sama.
-5. Kerjakan P9: masukkan data produk/motif/cover yang disetujui toko dan smoke-test sebagai admin serta pembeli. Jangan mengarang nama motif atau stok.
-
-## Batas audit
-
-Audit ini tidak mengubah implementasi atau file planning yang diaudit. Perubahan variasi/UI yang diperiksa berada di working tree branch `dev`; temuan harus ditinjau ulang setelah perubahan berikutnya dan sebelum perubahan tersebut dipublikasikan.
+Laporan ini mencatat tindak lanjut atas temuan audit, bukan persetujuan bahwa semua kebutuhan bisnis P9 sudah dipenuhi atau bahwa verifikasi penuh terbaru sudah dijalankan.
