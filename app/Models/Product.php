@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'category', 'description', 'harga', 'has_variants'];
+    protected $fillable = ['name', 'category', 'description', 'harga', 'has_variants', 'fabric_size'];
 
     protected $casts = [
         'harga' => 'decimal:2',
@@ -25,6 +26,12 @@ class Product extends Model
     {
         return $this->hasMany(ProductImage::class, 'product_id', 'id');
     }
+
+    /**
+     * Produk diarsipkan (soft delete), bukan dihapus: barisnya tetap dibutuhkan
+     * oleh order_details, jadi menghapus produk secara fisik akan ikut menghapus
+     * rincian item pada transaksi yang sudah dibayar.
+     */
 
     /** Motif kain. Hanya relevan untuk produk dengan has_variants = true. */
     public function variants()

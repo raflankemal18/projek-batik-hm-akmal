@@ -1,6 +1,6 @@
 # Planning — Variasi Motif Kain Batik
 
-**Status:** **P0–P4 (backend) SELESAI & TERVERIFIKASI 2026-08-13**; **temuan audit 2026-10-13 sudah diperbaiki** — `php artisan test` **209 passed (859 assertions)**, Playwright **9/9**, `npm run build` sukses. P5–P9 (UI) menunggu. Keputusan di §K, hasil audit di § Hasil audit.  
+**Status:** **P0–P8 selesai (terakhir 2026-10-13)**; **audit #1 dan audit #2 sudah diperbaiki** — penghapusan produk sekarang soft delete (arsip) + bisa dipulihkan, mode motif dikunci saat masih ada variasi, dokumen & link sudah dirapikan. Verifikasi setelah perbaikan ada di § Hasil audit #2. Sisa: **P9** (seed produk template & smoke).  
 **Konteks:** Permintaan pemilik toko agar pembeli bisa memilih motif kain seperti pilihan variasi di marketplace.  
 **Dasar teknis:** Struktur aplikasi pada branch `dev` dan catatan implementasi Fase A/B di `docs/planning-fix-p0-dan-automation-testing-2026-08-22.md`.
 
@@ -26,7 +26,9 @@ Data produk awal yang disampaikan:
 - Saat checkout, stok dikunci/dikurangi berdasarkan `ProductSize`; order menyimpan harga saat pembelian dan snapshot `size`. Pembayaran dan invoice bergantung pada detail order tersebut.
 - Karena harga saat ini berada di produk dan pilihan keranjang tidak memiliki ID motif, sekadar menambahkan tombol pilihan motif di frontend tidak cukup: pilihan berbeda dapat tergabung di keranjang, stoknya tidak terpisah, dan riwayat pesanan tidak dapat menyimpan motif yang dipilih.
 - Fase A dan B backend selesai, dan **Fase C (Playwright E2E, 9 skenario) juga sudah selesai** — lihat `docs/planning-fase-c-playwright-e2e-2026-08-22.md`. Fase D (GitHub Actions CI) belum selesai, dan tidak menjadi prasyarat_features variasi.
-- Perilaku backend variasi sudah ada (P1–P4); bagian yang belum ada adalah **antarmukanya**: pembeli dan admin belum pernah melihat/kelola motif.
+- *Status saat perencanaan (2026-08-13, sudah usang):* backend variasi baru ada (P1–P4) dan UI belum ada.
+  **Kondisi sekarang: P0–P8 selesai** — admin sudah bisa mengelola motif, pembeli sudah bisa memilihnya.
+  Lihat § Hasil eksekusi P5–P8.
 
 ## Rencana implementasi
 
@@ -263,11 +265,10 @@ php artisan products:migrate-sizes-to-variants --dry-run   # lihat rencana dulu
 php artisan products:migrate-sizes-to-variants            # eksekusi (aman diulang)
 ```
 
-**Yang tersisa (P5–P9):** UI admin kelola motif, katalog & detail pembeli, tampilan motif di
-keranjang/invoice/admin order, skenario E2E motif, dan seed produk template. Sampai P6 selesai, pembeli
-belum bisa memilih motif dari halaman produk — backendnya sudah siap menerima `product_variant_id`.
+**Yang tersisa saat ini:** hanya **P9** (seed produk template & smoke akhir). P5–P8 sudah selesai — rinciannya
+di § Hasil eksekusi P5, P6 & P7, dan P8.
 
-## P5 — UI admin: kelola motif (menunggu)
+## P5 — UI admin: kelola motif ✅ **SELESAI**
 
 Tujuannya: admin bisa menambah/mengubah motif tanpa menyentuh database, dan bisa melihat foto motif yang
 sudah diunggah.
@@ -286,7 +287,38 @@ sudah diunggah.
 - **Verifikasi:** `npm run build` + smoke manual admin (tambah motif → foto → ubah → hapus → motif
   nonaktif tidak muncul lagi).
 
-## P6 — Katalog & detail pembeli (menunggu)
+### Hasil eksekusi P5 (2026-10-13)
+
+**Verifikasi:** `php artisan test` **214 passed (890 assertions)**, Playwright **9/9**, `npm run build` sukses, dan
+smoke manual lewat browser (admin → tambah produk bermotif → tambah 2 motif → ubah → hapus) berhasil.
+
+**Yang ditambahkan**
+- `resources/js/Pages/admin/form/VariantManager.jsx` — daftar motif (foto / placeholder `ImageOff`), tambah,
+  ubah, hapus, upload foto opsional, plus keterangan jumlah motif aktif. Foto kosong tidak menghalangi.
+- `resources/js/Pages/admin/form/modal/Modal.jsx` — blok motif (mode edit), kolom **Ukuran Kain**
+  (`products.fabric_size`, migrasi `2026_08_13_000002`), dan switch **"Produk memakai pilihan motif"**.
+  Blok ukuran S/M/L disembunyikan & tidak dikirim kalau produk bermotif.
+- `resources/js/Pages/admin/Products.jsx` — kolom varian menampilkan motif (nama + stok, nonaktif dicoret)
+  untuk produk bermotif, ukuran untuk produk lama, dan "Belum ada motif" bila kosong.
+- Backend: `ProductRepository::getAllPaginatedForAdmin()` (semua motif, tanpa cache katalog), dipakai
+  `ProductController::index`; `AddProductRequest`/`UpdateProductRequest` menerima `fabric_size` +
+  `has_variants` dan membuat `sizes` opsional saat produk bermotif.
+- Test: `tests/Feature/Admin/ProductVariantAdminUITest.php` (5 test).
+
+**Tiga bug UI yang ketahuan & diperbaiki saat smoke (semua ketahuan karena probe browser, bukan kode):**
+1. **Tombol "Tambah Motif" diam-diam men-submit form produk.** `VariantManager` memakai `<form>` di dalam
+   `<form>` modal — HTML tidak boleh punya form bersarang, browser menutup form dalam sehingga tombolnya
+   mengaktifkan form produk. Fix: `div` + tombol `type="button"`.
+2. **Input file menutup seluruh area form.** `input[type=file]` memakai `absolute inset-0` tanpa parent
+   ber-`position: relative`, jadi ia menghalangi klik tombol Ubah/Hapus motif. Fix: `relative` pada label.
+3. **Perubahan motif tidak pernah terkirim.** `router.post(url, { ...buildFormData(), _method: 'PUT' })` —
+   FormData tidak bisa di-spread (`Object.entries(FormData)` kosong), jadi requestnya tanpa nama/harga/stok
+   dan gagal validasi. Fix: `fd.append('_method', 'PUT')`.
+4. **Daftar motif di dalam modal tidak ter-update.** State `editingProduct` menyimpan objek produk, jadi
+   setelah motif disimpan & list di-refresh, objek itu basi. Fix: simpan `editingProductId` dan turunkan
+   objeknya dari `list` saat render.
+
+## P6 — Katalog & detail pembeli ✅ **SELESAI**
 
 Tujuannya: pembeli memilih motif, bukan ukuran. Ini phase yang membuat fitur benar-benar terasa.
 
@@ -303,7 +335,7 @@ Tujuannya: pembeli memilih motif, bukan ukuran. Ini phase yang membuat fitur ben
 - **Verifikasi:** `npm run build`, smoke katalog, dan tidak ada `LazyLoadingViolationException` —
   `Model::preventLazyLoading` aktif di luar production, jadi relasi yang diakses wajib eager-load.
 
-## P7 — Keranjang, pembayaran, invoice, admin order (menunggu)
+## P7 — Keranjang, pembayaran, invoice, admin order ✅ **SELESAI**
 
 - `Keranjang.jsx`: nama motif + harga satuan dari variasi (`detail.variant?.price ?? product.harga`);
   dua motif dari produk yang sama tampil sebagai dua baris (backend sudah benar, ini cuma tampilan).
@@ -311,7 +343,45 @@ Tujuannya: pembeli memilih motif, bukan ukuran. Ini phase yang membuat fitur ben
   katalog — kalau motif diganti namanya, transaksi lama tidak boleh ikut berubah.
 - **Verifikasi:** E2E alur motif ujung-ke-ujung (pilih motif → keranjang → checkout → pembayaran).
 
-## P8 — Pengujian & penguatan (menunggu)
+### Hasil eksekusi P6 & P7 (2026-10-13)
+
+**Verifikasi:** `php artisan test` **219 passed (945 assertions)**, Playwright **11 passed (2,3 menit)**, `npm run build` sukses,
+plus smoke manual di browser untuk seluruh alur pembeli.
+
+**P6 — katalog & detail pembeli**
+- `ModernDetail.jsx`: produk bermotif menampilkan grid motif (foto motif, atau placeholder lewat `FallbackImage`
+  sampai foto dikirim dari toko). Motif stok 0 otomatis nonaktif & bertanda "Habis". Motif terpilih menampilkan
+  harga & stok motif itu, dan tombol tambah berubah jadi "Pilih Motif Dulu" (disabled) sampai motif dipilih.
+  Kuantitas dibatasi oleh stok motif. Produk tanpa motif tetap memakai blok ukuran — kini plus info **ukuran kain**.
+- `ProductCards.jsx`: harga "**Mulai dari Rp…**" bila motif punya harga berbeda, badge jumlah motif, dan tombol
+  keranjang diganti ikon palet yang mengarahkan ke detail (motif wajib dipilih dulu). Motif tidak pernah
+  menjadi produk terpisah — pencarian/wishlist tetap di produk induk.
+- `ProductRepository::getAllPaginated()` kini ikut mengambil `has_variants` & `fabric_size` (terlihat di §Bug).
+
+**P7 — motif di seluruh tampilan pesanan**
+- `lib/cart.js`: baris keranjang membawa motif, harga dari variasi, dan foto motif bila ada.
+- `Keranjang.jsx`: label "Motif: …" untuk produk bermotif (tetap "Ukuran: …" untuk produk lama).
+- `Checkout.jsx`, `Payment.jsx` (tagihan pending + riwayat + kartu "Pesanan Belum Dibayar"), `Invoice.jsx`,
+  `admin/Order.jsx`: menampilkan **snapshot `motif_name`**, bukan nama motif katalog — mengganti nama motif
+  tidak mengubah transaksi lama.
+- `HomeController::checkout()` mengirim `motif_name`, `is_variant`, dan harga dari variasi supaya ringkasan
+  di halaman checkout sama dengan yang ditagihkan.
+
+**Test baru:** `tests/Feature/ProductVariantBuyerUITest.php` (5 test) + `tests/e2e/variant.spec.ts`
+(2 skenario: pilih motif → keranjang, dan motif → checkout → order bermotif).
+
+**Tiga bug yang ketahuan saat pengerjaan P6/P7 (semua ditemukan lewat probe/assertion, bukan dari baca kode):**
+1. **Katalog diam-diam kehilangan informasi motif.** `ProductRepository::getAllPaginated()` memakai
+   `select([...])` eksplisit yang **tidak** menyertakan `has_variants`/`fabric_size`, jadi setiap produk terlihat
+   sebagai produk tanpa motif di seluruh katalog publik. Fix: kedua kolom ikut di-select.
+2. **Cache katalog mencemari E2E.** `php artisan e2e:reset` mengosongkan tabel tapi tidak membersihkan cache
+   (katalog bertahan 300 detik dan tidak relating ke baris DB), sehingga spec sempat melihat produk & motif
+   dari run sebelumnya. Fix: `e2e:reset` sekarang juga `cache:clear`.
+3. **`HomeController::checkout()` ternyata belum pernah ikut ter-patch** dari sesi backend — ringkasan checkout
+   masih memakai harga produk, bukan harga motif. Ketahuan karena test assert `motif_name` tidak ada. Fix:
+   baris keranjang bermotif memakai harga variasi + `motif_name`.
+
+## P8 — Pengujian & penguatan ✅ **SELESAI**
 
 - Feature test tersisa dari daftar Tahap 5: admin ubah motif tidak mengubah harga order lama saat
   produk dihapus, stok motif habis di satu motif tidak memblokir motif lain, foto motif dihapus ikut
@@ -322,6 +392,66 @@ Tujuannya: pembeli memilih motif, bukan ukuran. Ini phase yang membuat fitur ben
 - 2 skenario Playwright baru: pilih motif → keranjang → checkout; admin tambah motif → motif muncul
   di halaman produk pembeli.
 - **Verifikasi:** `php artisan test` + `npx playwright test` + `npm run build` hijau.
+
+### Hasil eksekusi P8 (2026-10-13)
+
+**Verifikasi lengkap (semua dijalankan ulang, bukan taken dari catatan sebelumnya):**
+
+| Yang dijalankan | Hasil |
+|---|---|
+| `php artisan test` | **228 passed (1002 assertions)** |
+| `npx playwright test` | **12 passed (1,8 menit)** |
+| `npm run build` | sukses |
+| `bash scripts/race-variant-stock.sh` | ✅ stok aman, satu order, tidak ada 500 |
+
+**Test backend baru — `tests/Feature/ProductVariantStockTest.php` (9 test)** menutup sisa daftar Tahap 5:
+motif habis tidak memblokir motif lain · `updateQuantity` menolak melebihi stok motif · hapus motif ikut menghapus
+berkas fotonya · histori order tetap punya snapshot motif meski produk dihapus · motif yang dibeli tetap punya
+snapshot nama & harga meski nama motif diganti & dinonaktifkan · harga motif dipakai walaupun harga produk
+berbeda · motif nonaktif tersembunyi dari katalog tapi tetap terlihat admin · produk bermotif tanpa motif sama
+sekali tidak bisa dibeli · produk bermotif tidak bisa dibeli lewat ukuran lama yang tidak punya motifnya (dan stok
+`products_sizes` yang bernilai 50 sama sekali tidak tersentuh).
+
+**Skenario Playwright baru — `tests/e2e/variant.spec.ts` skenario 9:** admin menambah motif "Lereng" →
+motif langsung muncul di katalog (jumlah motif naik) → bisa dipilih pembeli dengan harga yang benar.
+
+### 🔬 Uji race stok motif (bukti nyata, bukan test Pest)
+
+Pest berjalan berurutan di dalam satu transaksi, jadi **tidak pernah benar-benar menguji kompetisi**.
+Karena itu race diuji lewat HTTP sungguhan: `scripts/race-variant-stock.sh`.
+
+Cara kerjanya: menyiapkan motif dengan stok 1, dua user asli (login sungguhan + cookie jar + token CSRF,
+sesi diverifikasi lewat `/cart` supaya request yang "kalah" tidak diam-diam tidak terautentikasi), lalu dua
+`POST /checkout` ditembak **paralel** ke motif yang sama.
+
+Hasil yang tercatat (run terakhir):
+
+```
+==> Menyiapkan data uji (motif dengan stok 1, dua user dengan keranjang)
+    produk #316 motif 'Parang' (#110) stok = 1
+==> Menembak 2 checkout paralel
+    A: HTTP 302 -> http://localhost:8000/pembayaran
+    B: HTTP 302 -> http://localhost:8000/cart
+==> Hasil
+    stok motif sekarang : 0 (harus 0, tidak boleh negatif)
+    order draft dibuat  : 1 (harus 1)
+    redirect ke pembayaran: 1 (harus 1)
+    pesan untuk yang kalah: Stok tidak cukup untuk Batik E2E Motif Parang motif Parang
+    ✓ stok aman, satu order, tidak ada 500
+```
+
+Yang diverifikasi: stok tidak pernah negatif (0, bukan -1), hanya satu order terbentuk, pemenang diarahkan ke
+`/pembayaran`, yang kalah mendapat **302 (bukan 500 mentah)** dengan pesan ramah yang menyebut nama motif,
+dan keranjang yang kalah tetap utuh (transaksi rollback). Script mengembalikan exit code non-nol kalau salah
+satu syarat dilanggar, jadi bisa dipakai sebagai gerbang CI nanti.
+
+### ⚠️ Temuan terbuka dari P8
+
+1. ~~**🔴 Menghapus produk menghilangkan rincian item order-nya.**~~ — **SUDAH DIPERBAIKI** di § Hasil audit #2
+   (produk sekarang diarsipkan dengan soft delete, rincian order & invoice tetap utuh, dan produk bisa
+   dipulihkan).
+2. **🟠 Foto motif belum ada sama sekali** untuk produk bermotif hasil migrasi (motifnya masih bernama
+   S/M/L). Perlu daftar nama motif & foto dari toko — lihat § Pertanyaan untuk toko.
 
 ## P9 — Seed konten & smoke (menunggu)
 
@@ -336,7 +466,7 @@ Tujuannya: pembeli memilih motif, bukan ukuran. Ini phase yang membuat fitur ben
 
 ## Hasil audit 2026-10-13 & perbaikannya
 
-Audit (`docs/audit-update-planning-motif-batik.md`, 6 temuan) menolak aktivasi motif sebelum dua risiko
+Audit ([docs/audit-update-planning-variasi-motif-batik.md](./audit-update-planning-variasi-motif-batik.md), 6 temuan) menolak aktivasi motif sebelum dua risiko
 diselesaikan. Keduanya sudah diperbaiki dan diverifikasi, jadi command migrasi aman dijalankan di produksi
 langkah demi langkah.
 
@@ -369,25 +499,59 @@ php artisan products:migrate-sizes-to-variants --force            # 3. sisanya, 
 #    permintaan `size`-nya diarahkan ke motif dengan nama yang sama.
 ```
 
+
+
 ---
 
-## Langkah berikutnya — urutan yang disarankan
+## Hasil audit #2 (2026-10-13) & perbaikannya
 
-1. **P5 (UI admin) lebih dulu**, bukan P6. Alasannya: motif adalah konten. Kalau P6 lebih dulu, pembeli
-   dapat melihat tombol motif kosong di seluruh katalog karena belum ada yang mengisinya. Admin mengisi
-   motif dulu (nama + stok, foto menyusul), baru pembeli bisa memilih.
-2. **P6 setelah P5**, disusul langsung **P7** dalam satu putaran — ketiganya memakai data yang sama
-   (`variants`, `motif_name`) dan memecahannya jadi tiga commit hanya menambah pekerjaan berulang.
-3. **P8 setelah P6/P7**: dua skenario E2E motif baru ditulis setelah UI-nya benar-benar ada; uji race
-   stok variasi bisa kapan saja karena murni backend.
-4. **P9 terakhir**, setelah nama motif & stok asli datang dari toko. Pertanyaan yang sudah disiapkan ada di
-   bagian "Pertanyaan untuk toko" di atas.
+Audit kedua ([audit-planning-variasi-motif-sampai-p8-2026-10-13.md](./audit-planning-variasi-motif-sampai-p8-2026-10-13.md))
+menemukan 5 hal. Semuanya sudah ditangani:
 
-### Dua hal yang perlu diputuskan user sebelum lanjut
+| # | Temuan audit #2 | Status | Yang diperbaiki |
+|---|---|---|---|
+| 1 | **Tinggi** — hard delete produk menghapus baris rincian order | ✅ Diperbaiki | Produk sekarang memakai **soft delete (arsip)**: migrasi `deleted_at`, trait `SoftDeletes`, dan `ProductService::delete()` tidak lagi menghapus baris. `OrderDetail::product()` & `PaymentDetail::product()` memakai `withTrashed()` sehingga nama produk pada histori tetap terbaca. Berkas gambar/ukuran/motif sengaja disimpan agar produk bisa dipulihkan. Test lama yang mengunci perilaku kehilangan detail **diubah** menjadi menguji perilaku baru. |
+| 2 | **Sedang** — admin bisa mematikan `has_variants` saat masih ada variasi | ✅ Diperbaiki | `UpdateProductRequest::after()` menolak `has_variants` kosong bila produk masih punya variasi (aktif maupun nonaktif), dengan pesan yang menjelaskan harus menghapus motif dulu. Dipakai `after()`, bukan rule `prohibited`, karena `prohibited` justru mengizinkan nilai kosong — persis nilai yang harus ditolak. |
+| 3 | **Sedang** — status & langkah berikutnya di dokumen bertentangan | ✅ Diperbaiki | Bagian kondisi aplikasi ditandai sebagai *status saat perencanaan*; daftar "Yang tersisa" dipangkas jadi P9; bagian "Langkah berikutnya" ditulis ulang (P9 → konfirmasi toko → Fase D). |
+| 4 | **Sedang** — verifikasi tidak bisa direproduksi (build gagal `react-is`, tanpa `vendor/`) | ✅ Diperbaiki | Penyebabnya ditemukan: `recharts@3.10.1` mendeklarasikan **`react-is` sebagai peerDependency**, sehingga `npm install` biasa tidak memasangnya dan build gagal saat Rollup me-resolve `recharts`. Fix: `react-is` dideklarasikan eksplisit di devDependencies (terverifikasi: `rm -rf node_modules/react-is && npm install` → build sukses). Untuk bagian PHP: `composer install` di host memang **gagal** karena dependency dev Pest (`brianium/paratest`) mensyaratkan PHP ~8.2–8.4 sementara host memakai PHP 8.5.7 — jadi verifikasi backend memang harus jalan di container `php:8.2`. Semua langkah sekarang dibundel di `bash scripts/verify.sh`. |
+| 5 | **Rendah** — link audit sebelumnya salah nama | ✅ Diperbaiki | Link sekarang menuju `audit-update-planning-variasi-motif-batik.md`. |
 
-- Boleh mulai P5 sekarang memakai data contoh (motif placeholder), atau tunggu daftar motif asli dari toko?
-- Untuk kartu katalog: tampilkan "mulai dari" kalau harga motif berbeda, atau selalu tampilkan harga
-  motif termurah?
+### Perilaku arsip produk (kebijakan baru)
+
+- `DELETE /admin/products/{id}` dan bulk delete sekarang berarti **arsip**: produk hilang dari katalog publik,
+  dari daftar admin aktif, dan tidak bisa dibeli lagi, tapi barisnya tetap ada sehingga `order_details` dan
+  `payment_details` tidak ikut hilang.
+- Produk terarsip yang masih ada di keranjang **ditolak saat checkout** dengan pesan "Produk ini sudah tidak
+  tersedia" (`CheckoutService::guardArchivedProduct()`).
+- Halaman **Arsip Produk** (`/admin/products-archived`) menampilkan produk terarsip beserta tombol **Pulihkan**
+  (`POST /admin/products/{id}/restore`).
+- Test baru `tests/Feature/Admin/ProductModeAndArchiveTest.php` (5 test) mengunci seluruh perilaku ini:
+  mode motif tidak bisa dimatikan selama ada variasi, produk bermotif tetap bisa diperbarui, arsip hilang dari
+  katalog tapi invoice tetap terbaca, dan produk bisa dipulihkan.
+
+### Verifikasi setelah perbaikan (semua lewat `bash scripts/verify.sh`)
+
+| Yang dijalankan | Hasil |
+|---|---|
+| `php artisan test` | **234 passed (1068 assertions)** |
+| `npm run build` (container) | sukses |
+| `npx playwright test` | **12 passed (1,6 menit)** |
+| `bash scripts/race-variant-stock.sh` | ✅ stok aman, satu order, tidak ada 500 |
+
+Tambahan: `npm run build` juga sudah dicoba langsung di host setelah `npm install` + `react-is` eksplisit —
+berhasil, jadi temuan audit #4 soal build tidak bisa direproduksi sudah tertutup dari sisi dependency.
+---
+
+## Langkah berikutnya (per 2026-10-13, setelah P0–P8 selesai)
+
+1. **P9** — masukkan data produk/motif/cover yang disetujui toko (jangan mengarang nama motif atau stok),
+   lalu smoke manual sebagai admin & pembeli sampai invoice.
+2. **Dua keputusan yang masih terbuka** (lihat § Temuan terbuka P8 & audit 2026-10-13):
+   - Kebijakan penghapusan produk — sekarang sudah **arsip (soft delete)** + bisa dipulihkan, tapi masih
+     perlu konfirmasi toko apakah kebijakan ini sudah sesuai.
+   - Foto motif — butuh daftar nama motif & foto asli dari toko.
+3. Setelah P9: **Fase D (CI)** belum dikerjakan — `php artisan test`, `npm run build`, dan
+   `scripts/race-variant-stock.sh` sudah siap dijadikan gerbang CI.
 
 ---
 

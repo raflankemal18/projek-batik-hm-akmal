@@ -88,14 +88,23 @@ class HomeController extends Controller
         $orders = $cart
             ? [[
                 'id' => $cart->id,
+                // Baris keranjang bermotif memakai harga & nama motinya; baris
+                // produk lama tetap memakai harga produk. Kalau ini tidak
+                // dibedakan, ringkasan di halaman checkout akan berbeda dari yang
+                // benar-benar ditagihkan.
                 'order_details' => $cart->details->map(fn ($d) => [
                     'id' => $d->id,
                     'product' => $d->product,
+                    'variant' => $d->variant,
+                    'is_variant' => (bool) $d->variant,
+                    'motif_name' => $d->variant?->name ?? $d->size,
                     'size' => $d->size,
                     'quantity' => $d->quantity,
-                    'harga' => (float) $d->product->harga,
+                    'harga' => $d->variant ? (float) $d->variant->price : (float) $d->product->harga,
                 ]),
-                'total_harga' => (float) $cart->details->sum(fn ($d) => $d->product->harga * $d->quantity),
+                'total_harga' => (float) $cart->details->sum(
+                    fn ($d) => ($d->variant ? (float) $d->variant->price : (float) $d->product->harga) * $d->quantity
+                ),
             ]]
             : [];
 

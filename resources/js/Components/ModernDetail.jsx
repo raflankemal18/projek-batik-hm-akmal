@@ -3,7 +3,7 @@ import { router, Link, usePage } from "@inertiajs/react";
 import { formatRupiah } from "@/lib/format";
 import { storageUrl } from "@/lib/image";
 import FallbackImage from "@/Components/ui/FallbackImage";
-import { Star, Truck, ShieldCheck, Ruler, Minus, Plus, ShoppingBag, Heart } from "lucide-react";
+import { Star, Truck, ShieldCheck, Minus, Plus, ShoppingBag, Heart } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { toast } from "sonner";
 
@@ -13,9 +13,18 @@ export default function ModernDetail({ product }) {
     // 2. DEFINISIKAN isAdmin
     const isAdmin = auth?.user?.role === 'admin';
 
+    // Produk bermotif memakai pilihan motif (product_variants); produk lama
+    // tetap memakai pilihan ukuran (products_sizes).
+    const hasVariants = !!product.has_variants;
+    const variants = product.active_variants || [];
+
     const [selectedSize, setSelectedSize] = useState(null);
+    const [selectedVariant, setSelectedVariant] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
+
+    // Motif terpilih menentukan batas kuantitas: tidak boleh melebihi stok motif itu.
+    const maxQuantity = hasVariants ? (selectedVariant?.stock ?? 0) : 999;
 
     // Fallback jika tidak ada gambar
     const images = product.images && product.images.length > 0 
@@ -23,11 +32,34 @@ export default function ModernDetail({ product }) {
         : ["https://placehold.co/600x800?text=Batik+Image"];
 
     const handleQuantity = (type) => {
-        if (type === "inc") setQuantity(q => q + 1);
+        if (type === "inc") setQuantity(q => Math.min(maxQuantity, q + 1));
         if (type === "dec") setQuantity(q => Math.max(1, q - 1));
     };
 
     const handleAddToCart = () => {
+        if (hasVariants) {
+            if (!selectedVariant) {
+                toast.error("Silakan pilih motif batik terlebih dahulu.");
+                return;
+            }
+
+            if (selectedVariant.stock <= 0) {
+                toast.error("Motif ini sedang kosong.");
+                return;
+            }
+
+            router.post("/cart/add", {
+                product_id: product.id,
+                product_variant_id: selectedVariant.id,
+                quantity: quantity,
+            }, {
+                preserveScroll: true,
+                onSuccess: () => toast.success("Berhasil ditambahkan ke keranjang!")
+            });
+
+            return;
+        }
+
         if (!selectedSize) {
             toast.error("Silakan pilih ukuran batik terlebih dahulu.");
             return;
@@ -41,6 +73,11 @@ export default function ModernDetail({ product }) {
             preserveScroll: true,
             onSuccess: () => toast.success("Berhasil ditambahkan ke keranjang!")
         });
+    };
+
+    const selectVariant = (variant) => {
+        setSelectedVariant(variant);
+        setQuantity((q) => Math.min(q, Math.max(1, variant.stock)));
     };
 
     const toggleWishlist = () => {
@@ -121,13 +158,85 @@ export default function ModernDetail({ product }) {
                             </p>
                         </div>
 
-                        {/* Pilihan Ukuran */}
+                        {/* Pilihan Motif (produk bermotif) */}
+                        {hasVariants && (
+                            <div className="mb-8" data-testid="variant-picker">
+                                <div className="flex justify-between items-center mb-3">
+                                    <span className="text-sm font-bold text-batik-900 uppercase tracking-widest">Pilih Motif</span>
+                                    {product.fabric_size && (
+                                        <span className="text-xs text-gray-500">
+                                            Ukuran kain: <span className="font-medium text-batik-800">{product.fabric_size}</span>
+                                        </span>
+                                    )}
+                                </div>
+
+                                {variants.length === 0 ? (
+                                    <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        Motif untuk produk ini belum tersedia. Silakan cek kembali nanti.
+                                    </p>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                            {variants.map((variant) => (
+                                                <button
+                                                    key={variant.id}
+                                                    data-testid="variant-option"
+                                                    data-variant-name={variant.name}
+                                                    onClick={() => selectVariant(variant)}
+                                                    disabled={variant.stock <= 0}
+                                                    className={`relative rounded-xl border p-2 flex flex-col items-center gap-2 transition-all ${
+                                                        selectedVariant?.id === variant.id
+                                                            ? "border-batik-900 ring-2 ring-batik-gold ring-offset-2"
+                                                            : "border-gray-200 hover:border-batik-gold"
+                                                    } ${variant.stock <= 0 ? "opacity-50 cursor-not-allowed bg-gray-50" : "bg-white"}`}
+                                                >
+                                                    <FallbackImage
+                                                        src={variant.image_path}
+                                                        alt={variant.name}
+                                                        className="w-full aspect-[3/4] rounded-lg object-cover"
+                                                    />
+                                                    <span className="text-[11px] font-medium text-batik-900 text-center leading-tight">
+                                                        {variant.name}
+                                                    </span>
+                                                    {variant.stock <= 0 && (
+                                                        <span className="absolute inset-x-0 bottom-8 text-[10px] uppercase tracking-wide text-red-600">
+                                                            Habis
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {selectedVariant ? (
+                                            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm animate-in fade-in slide-in-from-left-2">
+                                                <span className="text-gray-600">
+                                                    Motif <span className="font-bold text-batik-900">{selectedVariant.name}</span>
+                                                </span>
+                                                <span className="text-lg font-bold text-batik-gold font-serif">
+                                                    {formatRupiah(selectedVariant.price)}
+                                                </span>
+                                                <span className="text-xs text-gray-500">
+                                                    Stok: <span className="font-bold text-batik-900">{selectedVariant.stock}</span> pcs
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-gray-500 mt-3">Pilih satu motif untuk melihat harga &amp; stoknya.</p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Pilihan Ukuran (produk tanpa motif) */}
+                        {!hasVariants && (
                         <div className="mb-8">
                             <div className="flex justify-between items-center mb-3">
                                 <span className="text-sm font-bold text-batik-900 uppercase tracking-widest">Pilih Ukuran</span>
-                                <button className="text-xs text-batik-gold underline flex items-center gap-1">
-                                    <Ruler className="w-3 h-3" /> Panduan Ukuran
-                                </button>
+                                {product.fabric_size && (
+                                    <span className="text-xs text-gray-500">
+                                        Ukuran kain: <span className="font-medium text-batik-800">{product.fabric_size}</span>
+                                    </span>
+                                )}
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 {product.sizes && product.sizes.map((size) => (
@@ -153,6 +262,7 @@ export default function ModernDetail({ product }) {
                                 </p>
                             )}
                         </div>
+                        )}
 
                         {/* Quantity & Action */}
                         <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -179,10 +289,12 @@ export default function ModernDetail({ product }) {
                                     <Button
                                         data-testid="add-to-cart"
                                         onClick={handleAddToCart}
-                                        size="lg" 
-                                        className="flex-1 rounded-full bg-batik-gold hover:bg-yellow-600 text-black font-bold text-lg h-12"
+                                        disabled={hasVariants && (!selectedVariant || selectedVariant.stock <= 0)}
+                                        size="lg"
+                                        className="flex-1 rounded-full bg-batik-gold hover:bg-yellow-600 text-black font-bold text-lg h-12 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <ShoppingBag className="w-5 h-5 mr-2" /> Masukkan Keranjang
+                                        <ShoppingBag className="w-5 h-5 mr-2" />
+                                        {hasVariants && !selectedVariant ? "Pilih Motif Dulu" : "Masukkan Keranjang"}
                                     </Button>
                                     <Button
                                         onClick={toggleWishlist}

@@ -110,7 +110,10 @@ export default function Payment({ payments, unpaidOrder }) {
                                         <ul className="space-y-1">
                                             {unpaidOrder.details.map((item) => (
                                                 <li key={item.id} className="text-sm text-gray-600 flex justify-between">
-                                                    <span>{item.quantity}x {item.product?.name || "Produk Batik"} ({item.size})</span>
+                                                    <span>
+                                                        {item.quantity}x {item.product?.name || "Produk Batik"}
+                                                        {item.motif_name ? ` (${item.motif_name})` : ` (${item.size})`}
+                                                    </span>
                                                     <span className="font-medium text-gray-900">{formatRupiah(item.harga * item.quantity)}</span>
                                                 </li>
                                             ))}
@@ -202,7 +205,14 @@ export default function Payment({ payments, unpaidOrder }) {
                                             <p className="text-xs text-gray-500 mb-1">{new Date(p.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <Package className="w-4 h-4" />
-                                                <span>{p.payment_details?.length || 0} Barang</span>
+                                                <span>
+                                                    {p.payment_details?.length || 0} Barang
+                                                    {p.payment_details?.map((d) => d.motif_name).filter(Boolean).length > 0 && (
+                                                        <span className="ml-2 text-batik-800 font-medium">
+                                                            {p.payment_details.map((d) => d.motif_name).filter(Boolean).join(', ')}
+                                                        </span>
+                                                    )}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

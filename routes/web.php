@@ -39,10 +39,12 @@ Route::middleware('auth', 'role:admin')->group(function () {
     Route::get('/admin/orders', [AdminDashboardController::class, 'orders'])->name('admin.orders');
     Route::get('/admin/orders/export', [OrderController::class, 'export'])->name('admin.orders.export');
     Route::get('/admin/products', [ProductController::class, 'index'])->name('admin.products');
+    Route::get('/admin/products-archived', [ProductController::class, 'archived'])->name('admin.products.archived');
     Route::post('/admin/products', [ProductController::class, 'store'])->name('admin.products.store');
     Route::put('/admin/products/{product}', [ProductController::class, 'update'])->name('admin.products.update');
     Route::delete('/admin/products/bulk', [ProductController::class, 'bulkDelete'])->name('admin.products.bulk_destroy');
     Route::delete('/admin/products/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
+    Route::post('/admin/products/{product}/restore', [ProductController::class, 'restore'])->name('admin.products.restore');
     Route::post('/admin/products/{product}/variants', [\App\Http\Controllers\Admin\ProductVariantController::class, 'store'])->name('admin.products.variants.store');
     Route::put('/admin/products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductVariantController::class, 'update'])->name('admin.products.variants.update');
     Route::delete('/admin/products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductVariantController::class, 'destroy'])->name('admin.products.variants.destroy');

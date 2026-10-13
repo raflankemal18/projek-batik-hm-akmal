@@ -160,7 +160,15 @@ export default function Keranjang({ keranjangs }) {
                                                 <Trash2 className="w-5 h-5" />
                                             </button>
                                         </div>
-                                        <p className="text-sm text-gray-500 mt-1">Ukuran: <span className="font-medium text-batik-900 bg-batik-50 px-2 py-0.5 rounded text-xs">{item.size}</span></p>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            {item.is_variant ? 'Motif' : 'Ukuran'}:{' '}
+                                            <span
+                                                data-testid="cart-variant-label"
+                                                className="font-medium text-batik-900 bg-batik-50 px-2 py-0.5 rounded text-xs"
+                                            >
+                                                {item.motif_name || item.size}
+                                            </span>
+                                        </p>
                                         <p className="text-lg font-bold text-batik-gold mt-2 font-serif">{formatRupiah(item.harga)}</p>
                                     </div>
 

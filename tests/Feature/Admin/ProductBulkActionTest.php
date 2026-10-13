@@ -58,7 +58,7 @@ test('user biasa tidak dapat melakukan bulk delete produk', function () {
     expect(Product::find($product->id))->not->toBeNull();
 });
 
-test('admin dapat bulk delete produk beserta stok dan gambar terkait', function () {
+test('admin dapat bulk delete produk (diarsipkan, bukan dihapus fisik)', function () {
     $admin = productBulkAdmin();
     $p1 = productBulkCreate('Batik A');
     $p2 = productBulkCreate('Batik B');
@@ -73,12 +73,22 @@ test('admin dapat bulk delete produk beserta stok dan gambar terkait', function 
     $response->assertRedirect('/admin/products');
     $response->assertSessionHas('success', '1 produk berhasil dihapus');
 
+    // Penghapusan produk sekarang soft delete: produk hilang dari katalog, tapi
+    // barisnya tetap ada karena order_details.product_idcascade — kalau hilang,
+    // rincian item pada order yang sudah dibayar ikut hilang.
     expect(Product::find($p1->id))->toBeNull()
-        ->and(ProductSize::find($sizeP1->id))->toBeNull()
-        ->and(ProductImage::find($imageP1->id))->toBeNull()
+        ->and(Product::withTrashed()->find($p1->id))->not->toBeNull()
+        ->and(ProductSize::find($sizeP1->id))->not->toBeNull()
+        ->and(ProductImage::find($imageP1->id))->not->toBeNull()
         ->and(Product::find($p2->id))->not->toBeNull()
         ->and(ProductSize::where('product_id', $p2->id)->exists())->toBeTrue()
         ->and(ProductImage::where('product_id', $p2->id)->exists())->toBeTrue();
+
+    // Dan produknya bisa dipulihkan lagi dari arsip.
+    $this->actingAs($admin)->post("/admin/products/{$p1->id}/restore")
+        ->assertRedirect(route('admin.products'));
+
+    expect(Product::find($p1->id))->not->toBeNull();
 });
 
 test('admin dapat bulk delete banyak produk sekaligus', function () {
@@ -97,8 +107,10 @@ test('admin dapat bulk delete banyak produk sekaligus', function () {
     expect(Product::find($p1->id))->toBeNull()
         ->and(Product::find($p2->id))->toBeNull()
         ->and(Product::find($p3->id))->not->toBeNull()
-        ->and(ProductSize::where('product_id', $p1->id)->exists())->toBeFalse()
-        ->and(ProductImage::where('product_id', $p1->id)->exists())->toBeFalse();
+        // Baris anak tetap disimpan agar histori transaksi tidak ikut hilang.
+        ->and(ProductSize::where('product_id', $p1->id)->exists())->toBeTrue()
+        ->and(ProductImage::where('product_id', $p1->id)->exists())->toBeTrue()
+        ->and(Product::onlyTrashed()->count())->toBe(2);
 });
 
 test('bulk delete mencatat audit log untuk setiap produk yang dihapus', function () {

@@ -37,6 +37,12 @@ class ProductPolicy
         return $user?->role === 'admin';
     }
 
+    /** Aksi level-kelas untuk produk yang sudah diarsipkan (tidak punya instance). */
+    public function updateAny(?User $user): bool
+    {
+        return $user?->role === 'admin';
+    }
+
     /** Kelola motif kain (CRUD product_variants). */
     public function manageVariants(?User $user, Product $product): bool
     {

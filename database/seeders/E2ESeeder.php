@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\PaymentDetail;
 use App\Models\Product;
 use App\Models\ProductSize;
+use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -44,6 +45,11 @@ class E2ESeeder extends Seeder
     public const WANITA_PRODUCT = 'Batik E2E Women';
     public const SEARCH_KEYWORD = 'Motifwali';
 
+    /** Produk bermotif untuk skenario E2E pemilihan motif. */
+    public const VARIANT_PRODUCT = 'Batik E2E Motif Parang';
+    public const VARIANT_MOTIF = 'Parang';
+    public const VARIANT_SOLD_OUT_MOTIF = 'Kawung';
+
     public const PENDING_TRANSACTION_ID = 'E2E-PENDING-0001';
     public const PAID_TRANSACTION_ID = 'E2E-PAID-0001';
 
@@ -63,6 +69,25 @@ class E2ESeeder extends Seeder
 
         $motif = $this->product('Kain E2E Motifwali Parang', 'pria', 320000, 'Kain dengan motif parang khas Jawa Timur.');
         ProductSize::create(['product_id' => $motif->id, 'size' => 'L', 'stock' => 7]);
+
+        // Produk bermotif: satu motif berstok, satu motif habis (untuk menguji
+        // tombol tambah yang nonaktif).
+        $batikMotif = $this->product(self::VARIANT_PRODUCT, 'wanita', 150000, 'Produk dengan pilihan motif kain.');
+        $batikMotif->update(['has_variants' => true, 'fabric_size' => '2 m x 1,1 m']);
+        ProductVariant::create([
+            'product_id' => $batikMotif->id,
+            'name' => self::VARIANT_MOTIF,
+            'price' => 150000,
+            'stock' => 6,
+            'is_active' => true,
+        ]);
+        ProductVariant::create([
+            'product_id' => $batikMotif->id,
+            'name' => self::VARIANT_SOLD_OUT_MOTIF,
+            'price' => 175000,
+            'stock' => 0,
+            'is_active' => true,
+        ]);
 
         $lowStock = $this->product(self::LOW_STOCK_PRODUCT, 'pria', 150000, 'Produk stok satu untuk uji kontrak error checkout.');
         $lowStockSize = ProductSize::create([

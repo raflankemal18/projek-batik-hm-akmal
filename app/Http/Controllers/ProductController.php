@@ -19,7 +19,9 @@ class ProductController extends Controller
     {
         $this->authorize('viewAny', Product::class);
 
-        $products = $this->productService->getAllPaginated(
+        // Halaman admin butuh SEMUA motif (aktif & nonaktif); katalog publik tidak
+        // boleh memakai cache karena stok motif berubah setiap kali motif diedit.
+        $products = $this->productService->getAllPaginatedForAdmin(
             12,
             $request->query('search'),
             $request->query('sort', 'created_at'),
@@ -103,6 +105,41 @@ class ProductController extends Controller
             DB::rollBack();
             return back()->withErrors(['message' => 'Gagal menghapus produk: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Memulihkan produk dari arsip. Penghapusan produk sekarang berupa soft
+     * delete (agar rincian order tidak ikut terhapus), jadi harus ada jalan
+     * membatalkannya.
+     */
+    public function restore(Request $request, int $product)
+    {
+        // authorize dengan class (bukan instance) karena produk yang diarsipkan
+        // tidak bisa diambil lewat route-model binding biasa.
+        $this->authorize('updateAny', Product::class);
+
+        $restored = $this->productService->restore($product);
+
+        AuditLogService::recordAdmin('product.restore', $restored, 'Produk dipulihkan dari arsip', [
+            'name' => $restored->name,
+        ]);
+
+        return redirect()->route('admin.products')->with('success', 'Produk berhasil dipulihkan');
+    }
+
+    /**
+     * Layar arsip: produk yang di-soft delete. query `archived=1` untuk melihatnya.
+     */
+    public function archived(Request $request)
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $products = $this->productService->getArchivedPaginated(12, $request->query('search'));
+
+        return Inertia::render('admin/Products', [
+            'products' => $products,
+            'archived' => true,
+        ]);
     }
 
     public function bulkDelete(Request $request)

@@ -19,9 +19,13 @@ class PaymentDetail extends Model
         return $this->belongsTo(Payment::class, 'payment_id', 'id');
     }
 
+    /**
+     * withTrashed(): produk bisa diarsipkan admin, tapi histori transaksi tetap
+     * harus bisa menampilkan nama produknya.
+     */
     public function product()
     {
-        return $this->belongsTo(Product::class, 'product_id', 'id');
+        return $this->belongsTo(Product::class, 'product_id', 'id')->withTrashed();
     }
 
     /**

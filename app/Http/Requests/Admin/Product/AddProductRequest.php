@@ -21,7 +21,11 @@ class AddProductRequest extends FormRequest
             'harga' => 'required|numeric',
             'description' => 'nullable|string',
             'category' => 'nullable|string|in:pria,wanita,sarimbit',
-            'sizes' => 'required|array',
+            'fabric_size' => 'nullable|string|max:60',
+            'has_variants' => 'nullable|boolean',
+            // Ukuran (products_sizes) hanya wajib untuk produk yang TIDAK memakai
+            // motif. Produk bermotif mengelola moturnya lewat endpoint terpisah.
+            'sizes' => $this->boolean('has_variants') ? 'sometimes|array' : 'required|array',
             'images' => 'sometimes|array',
             'images.*' => 'image|mimes:jpg,jpeg,png,gif|max:2048',
         ];

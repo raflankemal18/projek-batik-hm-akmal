@@ -23,8 +23,11 @@ export const TID = {
     categoryTab: 'category-tab',
     productCardLink: 'product-card-link',
     productCardCartButton: 'product-card-cart-button',
+    productCardMotifLink: 'product-card-motif-link',
 
     // Detail produk
+    variantPicker: 'variant-picker',
+    variantOption: 'variant-option',
     sizeOption: 'size-option',
     addToCart: 'add-to-cart',
 
@@ -38,6 +41,15 @@ export const TID = {
     // Pembayaran
     unpaidOrder: 'unpaid-order',
     startPayment: 'start-payment',
+
+    // Admin — motif
+    variantManager: 'variant-manager',
+    variantRow: 'variant-row',
+    variantName: 'variant-name',
+    variantPrice: 'variant-price',
+    variantStock: 'variant-stock',
+    variantImage: 'variant-image',
+    variantSave: 'variant-save',
 
     // Admin
     adminProductCreate: 'admin-product-create',

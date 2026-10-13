@@ -213,7 +213,7 @@ export default function Order({ payments }) {
                                                     <div key={idx} className="flex items-center gap-3 text-xs bg-gray-50 p-2 rounded border border-gray-100">
                                                         <div className="font-medium text-gray-900">{detail.product?.name}</div>
                                                         <div className="text-gray-500 border-l pl-2 ml-auto shrink-0">
-                                                            Size: {detail.size} x {detail.quantity}
+                                                            {detail.motif_name ? `Motif: ${detail.motif_name}` : `Size: ${detail.size}`} x {detail.quantity}
                                                         </div>
                                                     </div>
                                                 ))}

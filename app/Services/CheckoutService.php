@@ -102,6 +102,8 @@ class CheckoutService
      */
     private function prepareVariantDetail($detail, $lockedVariant = null): array
     {
+        $this->guardArchivedProduct($detail->product_id);
+
         $variant = $lockedVariant ?? $this->productVariantRepository->findForUpdate($detail->product_variant_id);
 
         if (! $variant || ! $variant->is_active) {
@@ -145,6 +147,22 @@ class CheckoutService
     }
 
     /**
+     * Produk diarsipkan (soft delete) tidak boleh dibelikan: meskipun produknya
+     * masih ada di baris keranjang, produk ini sudah tidak ada di katalog.
+     */
+    private function guardArchivedProduct(int $productId): void
+    {
+        $archived = Product::withTrashed()->where('id', $productId)->whereNotNull('deleted_at')->exists();
+
+        if ($archived) {
+            throw new InsufficientStockException(
+                'Produk ini sudah tidak tersedia',
+                ['product_id' => $productId, 'requested_qty' => 1, 'available' => 0]
+            );
+        }
+    }
+
+    /**
      * Baris keranjang produk lama. Kalau produknya meantime sudah bermotif
      * (mis. setelah command migrasi), baris tanpa product_variant_id
      * dipetakan ke motif bernama sama supaya stok yang dikurangi tetap satu
@@ -154,6 +172,8 @@ class CheckoutService
      */
     private function prepareSizeDetail($detail): array
     {
+        $this->guardArchivedProduct($detail->product_id);
+
         $product = Product::find($detail->product_id);
 
         if ($product?->has_variants) {

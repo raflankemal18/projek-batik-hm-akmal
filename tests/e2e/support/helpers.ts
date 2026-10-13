@@ -12,6 +12,9 @@ export const E2E_PASSWORD = 'password';
 export const E2E_ADMIN = { name: 'Admin E2E', email: 'admin@e2e.test', password: E2E_PASSWORD };
 export const E2E_USER = { name: 'User E2E', email: 'user@e2e.test', password: E2E_PASSWORD };
 
+/** User dengan keranjang kosong — dipakai skenario yang butuh belanja dari nol. */
+export const E2E_SHOPPER = { name: 'Shopper E2E', email: 'shopper@e2e.test', password: E2E_PASSWORD };
+
 /** User dengan tagihan pending dari E2ESeeder — dipakai skenario pembayaran. */
 export const E2E_PAYER = { name: 'Payer E2E', email: 'bayar@e2e.test', password: E2E_PASSWORD };
 

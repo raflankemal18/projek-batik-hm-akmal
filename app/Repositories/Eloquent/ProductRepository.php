@@ -29,7 +29,11 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
                 // Model::preventLazyLoading aktif di luar production.
                 'activeVariants',
             ])
-            ->select(['id', 'name', 'category', 'harga', 'description', 'created_at', 'updated_at']);
+            // has_variants & fabric_size wajib ikut: kartu/detail produk butuh
+            // keduanya untuk membedakan produk bermotif dan menampilkan ukuran kain.
+            // Menghilangkannya dari select membuat frontend diam-diam menganggap
+            // semua produk sebagai produk tanpa motif.
+            ->select(['id', 'name', 'category', 'harga', 'description', 'fabric_size', 'has_variants', 'created_at', 'updated_at']);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -47,6 +51,43 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         }
 
         return $query->paginate($perPage);
+    }
+
+    /**
+     * Daftar produk untuk halaman admin: memuat SEMUA motif (aktif & nonaktif,
+     * karena admin perlu melihat yang dinonaktifkan) dan tidak memakai cache
+     * katalog publik.
+     */
+    public function getAllPaginatedForAdmin(int $perPage, ?string $search = null, string $sort = 'created_at', string $direction = 'desc')
+    {
+        $allowedSorts = ['name', 'harga', 'created_at'];
+        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
+
+        return $this->query()
+            ->with(['sizes', 'variants' => fn ($q) => $q->orderBy('id')])
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($qq) use ($search) {
+                    $qq->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->when(in_array($sort, $allowedSorts, true), fn ($q) => $q->orderBy($sort, $direction))
+            ->paginate($perPage);
+    }
+
+    /** Mengambil produk walau sudah diarsipkan (untuk layar arsip admin). */
+    public function findWithTrashed(int $id): Product
+    {
+        return $this->query()->withTrashed()->where('id', $id)->firstOrFail();
+    }
+
+    /** Daftar produk diarsipkan untuk layar "Arsip" di admin. */
+    public function getArchivedPaginated(int $perPage = 12, ?string $search = null)
+    {
+        return $this->query()->withTrashed()->onlyTrashed()
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->orderByDesc('deleted_at')
+            ->paginate($perPage);
     }
 
     public function findWithRelations(int $id, array $relations = [])

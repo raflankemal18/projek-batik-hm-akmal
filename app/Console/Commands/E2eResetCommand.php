@@ -64,6 +64,12 @@ class E2eResetCommand extends Command
 
         $this->call('db:seed', ['--class' => E2ESeeder::class, '--force' => true]);
 
+        // Cache katalog produk bertahan 300 detik dan TIDAK relating ke baris database:
+        // setelah tabel dikosongkan, katalog masih berisi produk dari run
+        // sebelumnya (id & motif lama). Spec E2E sempat karena itu melihat
+        // katalog yang salah.
+        $this->call('cache:clear');
+
         $this->info('Database E2E siap dipakai.');
 
         return self::SUCCESS;

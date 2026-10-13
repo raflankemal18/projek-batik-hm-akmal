@@ -30,6 +30,17 @@ class ProductService
         });
     }
 
+    /** Daftar produk untuk halaman admin (semua motif, tanpa cache katalog). */
+    public function getAllPaginatedForAdmin(int $perPage = 12, ?string $search = null, string $sort = 'created_at', string $direction = 'desc')
+    {
+        return $this->productRepository->getAllPaginatedForAdmin($perPage, $search, $sort, $direction);
+    }
+
+    public function getArchivedPaginated(int $perPage = 12, ?string $search = null)
+    {
+        return $this->productRepository->getArchivedPaginated($perPage, $search);
+    }
+
     public function findWithRelations(int $id, array $relations = ['sizes', 'images', 'activeVariants'])
     {
         return $this->productRepository->findWithRelations($id, $relations);
@@ -48,9 +59,13 @@ class ProductService
                 'harga' => $request->harga,
                 'description' => $request->description,
                 'category' => $request->category,
+                'fabric_size' => $request->fabric_size,
+                'has_variants' => $request->boolean('has_variants'),
             ]);
 
-            $this->syncSizes($product, $request->input('sizes'));
+            if (! $product->has_variants) {
+                $this->syncSizes($product, $request->input('sizes'));
+            }
             $this->storeImages($product, $request->file('images'));
 
             $this->forgetCatalogCache();
@@ -67,6 +82,8 @@ class ProductService
                 'harga' => $request->harga,
                 'description' => $request->description,
                 'category' => $request->category,
+                'fabric_size' => $request->fabric_size,
+                'has_variants' => $request->boolean('has_variants'),
             ]);
 
             // Produk bermotif tidak boleh menyentuh products_sizes lagi: baris
@@ -86,19 +103,35 @@ class ProductService
         });
     }
 
+    /**
+     * MengARSIPKAN produk (soft delete), bukan menghapus barisnya.
+     *
+     * Kenapa tidak hard delete: `order_details.product_id` memakai FK cascade,
+     * jadi produk yang dihapus fisik ikut menarik baris rincian item pada
+     * setiap order — termasuk order yang sudah dibayar. Berkas gambar, ukuran,
+     * dan motif juga sengaja disimpan supaya produk bisa dipulihkan kembali dan
+     * histori tidak kehilangan konteks.
+     */
     public function delete(int $id): bool
     {
         return DB::transaction(function () use ($id) {
             $product = $this->productRepository->findWithRelations($id, ['images']);
 
-            foreach ($product->images as $image) {
-                $this->imageService->delete($image->image_path);
-            }
-
             $this->forgetCatalogCache();
 
-            return $this->productRepository->delete($id);
+            return $product->delete();
         });
+    }
+
+    /** Memulihkan produk dari arsip. */
+    public function restore(int $id): Product
+    {
+        $product = $this->productRepository->findWithTrashed($id);
+        $product->restore();
+
+        $this->forgetCatalogCache();
+
+        return $product;
     }
 
     private function syncSizes(Product $product, array $sizes): void

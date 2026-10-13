@@ -23,9 +23,13 @@ class OrderDetail extends Model
         return $this->belongsTo(Order::class, 'order_id', 'id');
     }
 
+    /**
+     * withTrashed(): produk bisa diarsipkan admin, tapi histori transaksi tetap
+     * harus bisa menampilkan nama produknya.
+     */
     public function product()
     {
-        return $this->belongsTo(Product::class, 'product_id', 'id');
+        return $this->belongsTo(Product::class, 'product_id', 'id')->withTrashed();
     }
 
     /** Motif yang dibeli; null untuk order lama. */

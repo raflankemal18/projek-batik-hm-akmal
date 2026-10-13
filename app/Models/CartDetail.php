@@ -13,9 +13,11 @@ class CartDetail extends Model
         return $this->belongsTo(Cart::class, 'cart_id', 'id');
     }
 
+    /** withTrashed(): produk terarsip masih harus terbaca di keranjang supaya
+     *  halamannya tidak blank; pembelanjaannya sendiri dicegah di checkout. */
     public function product()
     {
-        return $this->belongsTo(Product::class, 'product_id', 'id');
+        return $this->belongsTo(Product::class, 'product_id', 'id')->withTrashed();
     }
 
     /** Motif yang dipilih. Null untuk produk lama yang masih memakai kolom size. */

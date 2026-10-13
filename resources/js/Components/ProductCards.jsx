@@ -3,7 +3,7 @@ import { Link, router, usePage } from "@inertiajs/react";
 import { formatRupiah } from "@/lib/format";
 import FallbackImage from "@/Components/ui/FallbackImage";
 import { motion } from "framer-motion";
-import { ShoppingCart, Eye, Heart } from "lucide-react";
+import { ShoppingCart, Palette, Eye, Heart } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Badge } from "@/Components/ui/badge";
 import { toast } from "sonner";
@@ -12,6 +12,30 @@ export default function ProductCards({ products }) {
     // 1. AMBIL DATA AUTH UNTUK CEK ADMIN
     const { auth, wishlistIds } = usePage().props;
     const isAdmin = auth?.user?.role === 'admin';
+
+    // 2. PRODUK BERMOTIF
+    // Motif tidak pernah menjadi produk terpisah: kartu tetap milik produk induk,
+    // hanya harga yang ditampilkan "mulai dari" bila motif punya harga berbeda,
+    // dan tombol keranjang mengarahkan ke detail (motif harus dipilih dulu).
+    const motifPrices = (product) =>
+        (product.active_variants || []).map((v) => Number(v.price));
+
+    const cardPrice = (product) => {
+        if (!product.has_variants) return { label: formatRupiah(product.harga), isMin: false };
+
+        const prices = motifPrices(product);
+        if (prices.length === 0) return { label: formatRupiah(product.harga), isMin: false };
+
+        const min = Math.min(...prices);
+        const isMin = prices.some((p) => p !== min);
+
+        return {
+            label: `${isMin ? 'Mulai dari ' : ''}${formatRupiah(min)}`,
+            isMin,
+        };
+    };
+
+    const motifCount = (product) => (product.active_variants || []).length;
     
     const addToCart = (e, product) => {
         e.preventDefault(); 
@@ -77,16 +101,28 @@ export default function ProductCards({ products }) {
                             {/* LOGIKA: Sembunyikan Tombol Cart Jika Admin */}
                             {!isAdmin && (
                                 <>
-                                    <Button
-                                        data-testid="product-card-cart-button"
-                                        size="icon"
-                                        variant="secondary"
-                                        className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg"
-                                        onClick={(e) => addToCart(e, product)}
-                                        title="Add to Cart"
-                                    >
-                                        <ShoppingCart className="w-4 h-4" />
-                                    </Button>
+                                    {product.has_variants ? (
+                                        <Link
+                                            href={`/products/${product.id}`}
+                                            data-testid="product-card-motif-link"
+                                            title="Pilih motif"
+                                            aria-label={`Pilih motif untuk ${product.name}`}
+                                            className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg flex items-center justify-center"
+                                        >
+                                            <Palette className="w-4 h-4" />
+                                        </Link>
+                                    ) : (
+                                        <Button
+                                            data-testid="product-card-cart-button"
+                                            size="icon"
+                                            variant="secondary"
+                                            className="rounded-full w-10 h-10 bg-white/90 hover:bg-white text-black shadow-lg"
+                                            onClick={(e) => addToCart(e, product)}
+                                            title="Add to Cart"
+                                        >
+                                            <ShoppingCart className="w-4 h-4" />
+                                        </Button>
+                                    )}
                                     
                                     <Button 
                                         size="icon" 
@@ -116,15 +152,21 @@ export default function ProductCards({ products }) {
                             </h3>
                         </Link>
                         
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center justify-between mt-2 gap-2">
                             <div className="flex flex-col">
                                 <span className="text-lg font-bold text-gray-900 dark:text-white">
-                                    {formatRupiah(product.harga)}
+                                    {cardPrice(product).label}
                                 </span>
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded-md">
-                                {product.sizes ? product.sizes.length : 0} Sizes
-                            </div>
+                            {product.has_variants ? (
+                                <div className="text-xs text-batik-800 font-medium bg-batik-50 border border-batik-100 px-2 py-1 rounded-md">
+                                    {motifCount(product)} motif
+                                </div>
+                            ) : (
+                                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded-md">
+                                    {product.sizes ? product.sizes.length : 0} Sizes
+                                </div>
+                            )}
                         </div>
                     </div>
                 </motion.div>

@@ -57,7 +57,10 @@ export default function Invoice({ payment }) {
                                 <td className="text-left text-gray-700">
                                     {item.product?.name || "Product"}{" "}
                                     <p className="text-sm text-gray-500">
-                                        (Size: {item.size}, Qty: {item.quantity})
+                                        {/* motif_name dipakai, bukan nama motif di katalog,
+                                            supaya invoice lama tetap benar setelah motif
+                                            diganti namanya. */}
+                                        ({item.motif_name ? `Motif: ${item.motif_name}` : `Size: ${item.size}`}, Qty: {item.quantity})
                                     </p>
                                 </td>
                                 <td className="text-right text-gray-700">

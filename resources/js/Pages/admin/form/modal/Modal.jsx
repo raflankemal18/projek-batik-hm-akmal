@@ -3,6 +3,7 @@ import { router } from "@inertiajs/react";
 import { X, Plus, Trash2, UploadCloud, Save } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/Components/ui/dialog";
+import VariantManager from "../VariantManager";
 import { toast } from "sonner";
 
 export default function ProductModal({ isOpen, onClose, product = null }) {
@@ -14,6 +15,8 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
         harga: "",
         description: "",
         category: "",
+        fabric_size: "",
+        has_variants: false,
         sizes: [{ size: "S", stock: 10 }],
         images: []
     });
@@ -27,6 +30,8 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                 harga: product.harga || "",
                 description: product.description || "",
                 category: product.category || "",
+                fabric_size: product.fabric_size || "",
+                has_variants: !!product.has_variants,
                 sizes: product.sizes.length > 0 ? product.sizes : [{ size: "S", stock: 0 }],
                 images: [] // Reset gambar baru
             });
@@ -37,6 +42,8 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                 harga: "",
                 description: "",
                 category: "",
+                fabric_size: "",
+                has_variants: false,
                 sizes: [{ size: "S", stock: 10 }],
                 images: []
             });
@@ -71,6 +78,10 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
         formData.append("harga", data.harga);
         formData.append("description", data.description);
         formData.append("category", data.category);
+        formData.append("fabric_size", data.fabric_size || "");
+        // Penting: produk bermotif tidak butuh sizes[] (backend memverifikasi ulang),
+        // dan has_variants harus dikirim sebagai "1"/"" supaya checkbox terkirim.
+        formData.append("has_variants", data.has_variants ? "1" : "");
         
         // Stringify sizes array agar bisa dikirim lewat FormData
         data.sizes.forEach((s) => formData.append("sizes[]", JSON.stringify(s)));
@@ -137,9 +148,48 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                                 <option value="sarimbit">sarimbit</option>
                             </select>
                         </div>
+                        <div className="col-span-2 md:col-span-1">
+                            <label className="block text-sm font-medium mb-1">Ukuran Kain</label>
+                            <input
+                                data-testid="admin-product-fabric-size"
+                                type="text"
+                                id="fabric_size"
+                                value={data.fabric_size}
+                                onChange={handleChange}
+                                placeholder="Contoh: 2 m × 1,1 m"
+                                className="w-full p-2 border rounded-md focus:ring-batik-gold"
+                            />
+                            <p className="text-[11px] text-gray-500 mt-1">Informasi produk, bukan pilihan pembeli.</p>
+                        </div>
+                        <div className="col-span-2 md:col-span-1 flex items-end">
+                            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                                <input
+                                    data-testid="admin-product-has-variants"
+                                    type="checkbox"
+                                    checked={data.has_variants}
+                                    onChange={(e) => setData({ ...data, has_variants: e.target.checked })}
+                                    className="rounded border-gray-300 text-batik-600"
+                                />
+                                <span>Produk memakai pilihan motif</span>
+                            </label>
+                        </div>
                     </div>
 
+                    {/* Motif kain (hanya untuk produk bermotif) */}
+                    {product ? (
+                        <VariantManager
+                            product={product}
+                            onChanged={() => router.reload({ only: ['products'] })}
+                        />
+                    ) : (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                            Simpan produk dulu, baru tambahkan motifnya. Foto motif boleh menyusul —
+                            cukup mengisi nama motif, harga, dan stok.
+                        </div>
+                    )}
+
                     {/* Varian Ukuran */}
+                    {!data.has_variants && (
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <label className="block text-sm font-bold mb-3 text-batik-900">Stok & Ukuran</label>
                         {data.sizes.map((size, index) => (
@@ -153,6 +203,7 @@ export default function ProductModal({ isOpen, onClose, product = null }) {
                             <Plus className="w-3 h-3" /> Tambah Ukuran
                         </button>
                     </div>
+                    )}
 
                     {/* Image Upload */}
                     <div className="border-2 border-dashed border-gray-300 p-6 rounded-lg text-center hover:bg-gray-50 transition cursor-pointer relative">

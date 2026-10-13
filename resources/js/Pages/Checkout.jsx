@@ -176,7 +176,11 @@ export default function Checkout({ orders }) {
                                                 </div>
                                                 <div className="flex-1">
                                                     <h4 className="text-sm font-bold text-batik-900 line-clamp-1 font-serif">{detail.product?.name}</h4>
-                                                    <p className="text-xs text-gray-500 mt-1">Size: <span className="font-medium text-batik-700">{detail.size}</span> | Qty: {detail.quantity}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">
+                                                        {detail.motif_name ? 'Motif' : 'Size'}:{' '}
+                                                        <span className="font-medium text-batik-700">{detail.motif_name || detail.size}</span>
+                                                        {' | '}Qty: {detail.quantity}
+                                                    </p>
                                                     <p className="text-sm font-bold text-batik-gold mt-1">{formatRupiah(detail.harga)}</p>
                                                 </div>
                                             </div>
